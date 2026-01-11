@@ -1,0 +1,26 @@
+.Card{
+    width: 92%;
+    min-height: 100vh;
+    margin: auto;
+    padding: 50px 0;
+}
+.card_h1{
+    font-size: 45px;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+.card_p{
+    font-weight: 400;
+}
+.narx_box{
+    margin-top: 40px;
+}
+.narx_box{
+    width: 100%;
+    min-height: 100vh;
+    background-color: #eee;
+    border-radius: 20px;
+    
+}
+
+/*  */
