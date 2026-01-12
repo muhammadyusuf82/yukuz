@@ -412,7 +412,7 @@ const ProfileSetup = () => {
           first_name: firstName,
           last_name: lastName,
           address: fullAddress,
-          role: 'shipper'
+          role: localStorage.getItem('job')
         })
       });
 

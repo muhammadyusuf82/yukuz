@@ -543,7 +543,6 @@ const Login = () => {
       password: data.password,
       role: job === 1 ? 'shipper' : 'driver',
     };
-
     const response = await fetch(baseUrl + 'api/users/', {
       method: 'POST',
       headers: {
@@ -552,6 +551,7 @@ const Login = () => {
       },
       body: JSON.stringify(apiData)
     });
+    localStorage.setItem('job', job === 1 ? 'shipper' : 'driver')
 
     const responseData = await response.json();
     
