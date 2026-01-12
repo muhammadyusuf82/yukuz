@@ -294,8 +294,8 @@ const FreightDetail = ({ freightId, freightData, onBack }) => {
                   </span>
                 </p>
                 <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #eee; font-size: 11px; color: #666;">
-                  Kenglik: ${freight.route_starts_where_lat}<br/>
-                  Uzunlik: ${freight.route_starts_where_lon}
+                  Kenglik: ${freight.route_starts_where_data.city}<br/>
+                  Uzunlik: ${freight.route_ends_where_data.city}
                 </div>
               </div>
             `)
@@ -345,15 +345,15 @@ const FreightDetail = ({ freightId, freightData, onBack }) => {
               <div style="padding: 12px; min-width: 220px;">
                 <h3 style="margin: 0; color: #10B981; font-weight: bold; font-size: 16px;">🏁 Tushirish joyi</h3>
                 <p style="margin: 8px 0 0 0; font-size: 14px; line-height: 1.4;">
-                  <strong style="font-size: 15px;">${freight.route_ends_where_city}</strong><br/>
-                  <span style="color: #555;">${freight.route_ends_where_region}</span><br/>
+                  <strong style="font-size: 15px;">${freight.route_ends_where_data.city}</strong><br/>
+                  <span style="color: #555;">${freight.route_ends_where_data.region}</span><br/>
                   <span style="font-size: 12px; color: #777;">
                     ${formatDate(freight.route_end_time_to)}
                   </span>
                 </p>
                 <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #eee; font-size: 11px; color: #666;">
-                  Kenglik: ${freight.route_ends_where_lat || 'Noma\'lum'}<br/>
-                  Uzunlik: ${freight.route_ends_where_lon || 'Noma\'lum'}
+                  Qayerdan: ${freight.route_ends_where_data.city || 'Noma\'lum'}<br/>
+                  Qayerga: ${freight.route_ends_where_data.city || 'Noma\'lum'}
                 </div>
               </div>
             `)
@@ -700,7 +700,7 @@ const FreightDetail = ({ freightId, freightData, onBack }) => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center">
+      <div className="min-h-screen bg-linear-to-br from-gray-50 to-blue-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Yuk ma'lumotlari yuklanmoqda...</p>
@@ -711,7 +711,7 @@ const FreightDetail = ({ freightId, freightData, onBack }) => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center">
+      <div className="min-h-screen bg-linear-to-br from-gray-50 to-blue-50 flex items-center justify-center">
         <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md">
           <FaExclamationTriangle className="text-red-500 text-4xl mx-auto mb-4" />
           <h3 className="text-xl font-bold text-gray-800 mb-2">Xatolik</h3>
@@ -729,7 +729,7 @@ const FreightDetail = ({ freightId, freightData, onBack }) => {
 
   if (!freight) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center">
+      <div className="min-h-screen bg-linear-to-br from-gray-50 to-blue-50 flex items-center justify-center">
         <div className="text-center">
           <FaExclamationTriangle className="text-gray-400 text-4xl mx-auto mb-4" />
           <h3 className="text-xl font-bold text-gray-800 mb-2">Yuk topilmadi</h3>
@@ -751,10 +751,10 @@ const FreightDetail = ({ freightId, freightData, onBack }) => {
   const endLon = parseFloat(freight.route_ends_where_lon || freight.route_starts_where_lon);
 
   return (
-    <div className={`min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 ${isMapFullscreen ? 'overflow-hidden' : ''}`}>
+    <div className={`min-h-screen bg-linear-to-br from-gray-50 to-blue-50 ${isMapFullscreen ? 'overflow-hidden' : ''}`}>
       {/* Header */}
       <div className="bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="max-w-7xl mx-auto py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <button
@@ -786,7 +786,7 @@ const FreightDetail = ({ freightId, freightData, onBack }) => {
       </div>
 
       {/* Main Content - Cards in 2 Columns */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="max-w-7xl mx-auto py-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           
           {/* LEFT COLUMN */}
@@ -801,7 +801,7 @@ const FreightDetail = ({ freightId, freightData, onBack }) => {
               <div className="space-y-4">
                 {/* Departure */}
                 <div className="flex items-start space-x-4 p-4 bg-blue-50 rounded-xl border border-blue-100">
-                  <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
+                  <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center shrink-0">
                     <FaArrowUp className="text-blue-600 text-lg" />
                   </div>
                   <div className="flex-1">
@@ -814,8 +814,8 @@ const FreightDetail = ({ freightId, freightData, onBack }) => {
                         {formatDate(freight.route_start_time_from)}
                       </div>
                       <div className="text-xs text-gray-500">
-                        📍 Kenglik: {freight.route_starts_where_lat}<br/>
-                        📍 Uzunlik: {freight.route_starts_where_lon}
+                        📍 Qayerdan: {freight.route_starts_where_data.city}<br/>
+                        📍 Qayerga: {freight.route_starts_where_data.region}
                       </div>
                     </div>
                   </div>
@@ -823,7 +823,7 @@ const FreightDetail = ({ freightId, freightData, onBack }) => {
 
                 {/* Destination */}
                 <div className="flex items-start space-x-4 p-4 bg-green-50 rounded-xl border border-green-100">
-                  <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center flex-shrink-0">
+                  <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center shrink-0">
                     <FaArrowDown className="text-green-600 text-lg" />
                   </div>
                   <div className="flex-1">
@@ -836,8 +836,8 @@ const FreightDetail = ({ freightId, freightData, onBack }) => {
                         {formatDate(freight.route_end_time_to)}
                       </div>
                       <div className="text-xs text-gray-500">
-                        📍 Kenglik: {freight.route_ends_where_lat || 'Noma\'lum'}<br/>
-                        📍 Uzunlik: {freight.route_ends_where_lon || 'Noma\'lum'}
+                        📍 Qayerdan: {freight.route_ends_where_data.city || 'Noma\'lum'}<br/>
+                        📍 Qayerga: {freight.route_ends_where_data.region || 'Noma\'lum'}
                       </div>
                     </div>
                   </div>
@@ -845,21 +845,21 @@ const FreightDetail = ({ freightId, freightData, onBack }) => {
 
                 {/* Route Stats */}
                 <div className="grid grid-cols-3 gap-3">
-                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-xl text-center border border-blue-200">
+                  <div className="bg-linear-to-br from-blue-50 to-blue-100 p-4 rounded-xl text-center border border-blue-200">
                     <p className="text-xs font-medium text-blue-600 mb-1">MASOFA</p>
                     <p className="text-2xl font-bold text-gray-800">
                       {routeLoading ? '...' : routeDistance ? `${routeDistance} km` : '~480 km'}
                     </p>
                     <p className="text-xs text-gray-500 mt-1">Yo'l uzunligi</p>
                   </div>
-                  <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-xl text-center border border-green-200">
+                  <div className="bg-linear-to-br from-green-50 to-green-100 p-4 rounded-xl text-center border border-green-200">
                     <p className="text-xs font-medium text-green-600 mb-1">VAQT</p>
                     <p className="text-2xl font-bold text-gray-800">
                       {routeLoading ? '...' : routeDuration ? `${routeDuration} soat` : '6-8 soat'}
                     </p>
                     <p className="text-xs text-gray-500 mt-1">Taxminiy</p>
                   </div>
-                  <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-xl text-center border border-purple-200">
+                  <div className="bg-linear-to-br from-purple-50 to-purple-100 p-4 rounded-xl text-center border border-purple-200">
                     <p className="text-xs font-medium text-purple-600 mb-1">HOLAT</p>
                     <p className="text-2xl font-bold text-gray-800">Faol</p>
                     <p className="text-xs text-gray-500 mt-1">Yuk holati</p>
@@ -968,7 +968,7 @@ const FreightDetail = ({ freightId, freightData, onBack }) => {
                 To'lov ma'lumotlari
               </h2>
               
-              <div className="mb-6 p-5 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200">
+              <div className="mb-6 p-5 bg-linear-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200">
                 <p className="text-sm font-medium text-gray-500 mb-2">JAMI NARX</p>
                 <p className="text-3xl font-bold text-gray-800">
                   {formatCurrency(freight.freight_rate_amount, freight.freight_rate_currency)}
@@ -1005,11 +1005,11 @@ const FreightDetail = ({ freightId, freightData, onBack }) => {
                 <p className="text-xs font-medium text-gray-500 mb-2">TO'LOV IZOHLARI</p>
                 <ul className="space-y-2 text-sm text-gray-600">
                   <li className="flex items-start">
-                    <FaCheckCircle className="text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                    <FaCheckCircle className="text-green-500 mr-2 mt-0.5 shrink-0" />
                     <span>To'lov yuk yetkazilgandan so'ng amalga oshiriladi</span>
                   </li>
                   <li className="flex items-start">
-                    <FaCheckCircle className="text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                    <FaCheckCircle className="text-green-500 mr-2 mt-0.5 shrink-0" />
                     <span>Barcha hujjatlar to'liq taqdim etilishi kerak</span>
                   </li>
                 </ul>
@@ -1095,8 +1095,8 @@ const FreightDetail = ({ freightId, freightData, onBack }) => {
               
               <div className="space-y-6">
                 {/* Owner Info */}
-                <div className="flex items-center space-x-4 p-4 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl border border-blue-100">
-                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-md">
+                <div className="flex items-center space-x-4 p-4 bg-linear-to-r from-blue-50 to-cyan-50 rounded-xl border border-blue-100">
+                  <div className="w-14 h-14 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-md">
                     <span className="text-white text-lg font-bold">
                       {freight.owner_first_name?.[0]}{freight.owner_last_name?.[0]}
                     </span>
@@ -1118,7 +1118,7 @@ const FreightDetail = ({ freightId, freightData, onBack }) => {
                 </div>
 
                 {/* Special Requirements */}
-                <div className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border border-purple-100">
+                <div className="p-4 bg-linear-to-r from-purple-50 to-pink-50 rounded-xl border border-purple-100">
                   <div className="flex items-center mb-2">
                     <FaInfoCircle className="text-purple-600 mr-2" />
                     <p className="text-sm font-medium text-purple-700">MAXSUS TALABLAR</p>
@@ -1157,7 +1157,7 @@ const FreightDetail = ({ freightId, freightData, onBack }) => {
 
         {/* Large Map Container - Full width below cards */}
         <div className={`bg-white rounded-2xl shadow-xl border border-gray-200 mb-8 overflow-hidden ${isMapFullscreen ? 'fixed inset-0 z-50 m-0 rounded-none' : ''}`}>
-          <div className="bg-gradient-to-r from-blue-800 z-10 to-blue-900 text-white px-6 py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center">
+          <div className="bg-linear-to-r from-blue-800 z-10 to-blue-900 text-white px-6 py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center">
             <div className="flex items-center space-x-3 mb-3 sm:mb-0">
               <FaGlobe className="text-xl" />
               <div>
@@ -1221,7 +1221,7 @@ const FreightDetail = ({ freightId, freightData, onBack }) => {
           <div className="relative">
             <div
               ref={mapContainer}
-              className={`w-full ${isMapFullscreen ? 'h-[calc(100vh-140px)]' : 'h-[500px]'}`}
+              className={`w-full ${isMapFullscreen ? 'h-[calc(100vh-140px)]' : 'h-125'}`}
             />
             
             {routeLoading && (

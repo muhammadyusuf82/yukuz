@@ -208,16 +208,7 @@ function Dashboard({ onFreightDetail }) {
             total: statistics.inProgressCount,
             title: "Jarayonda"
         },
-        {
-            id: 4,
-            icon: FaWallet,
-            icon_color: '#f72585',
-            icon_bg: '#fee9f3',
-            benefit: statistics.percentMoney >= 0,
-            percent: Math.abs(statistics.percentMoney),
-            total: statistics.totalMoney,
-            title: "So'm daromad"
-        }
+        
     ], [statistics]);
 
     const actins = [
@@ -228,75 +219,79 @@ function Dashboard({ onFreightDetail }) {
     ];
 
     const mappedLoads = useMemo(() => {
-        return apiLoads.map((item, index) => {
-            const fromCity = item.route_starts_where_city ||
-                item.origin_address ||
-                item.from_city ||
-                item.origin ||
-                "Aniqlanmagan";
+    return apiLoads.map((item, index) => {
+        const fromCity = item.route_starts_where_data?.street ||
+            item.route_starts_where_city ||
+            item.origin_address ||
+            item.from_city ||
+            item.origin ||
+            "Aniqlanmagan";
 
-            const fromRegion = item.route_starts_where_region ||
-                (item.route_starts_where_lat ? `Lat: ${item.route_starts_where_lat}` : "Viloyat");
+        const fromRegion = item.route_starts_where_data?.region ||
+            item.route_starts_where_region ||
+            (item.route_starts_where_lat ? `Lat: ${item.route_starts_where_lat}` : "Viloyat");
 
-            const toCity = item.route_ends_where_city ||
-                item.destination_address ||
-                item.to_city ||
-                item.destination ||
-                "Viloyat";
+        const toCity = item.route_ends_where_data?.street ||
+            item.route_ends_where_city ||
+            item.destination_address ||
+            item.to_city ||
+            item.destination ||
+            "Viloyat";
 
-            const toRegion = item.route_ends_where_region ||
-                (item.route_ends_where_lat ? `Lat: ${item.route_ends_where_lat}` : "Viloyat");
+        const toRegion = item.route_ends_where_data?.region ||
+            item.route_ends_where_region ||
+            (item.route_ends_where_lat ? `Lat: ${item.route_ends_where_lat}` : "Viloyat");
 
-            let situation = "FAOL";
-            let situation_bg = 'bg-[#edf9fd]';
-            let situation_color = 'text-[#4cc9f0]';
+        let situation = "FAOL";
+        let situation_bg = 'bg-[#edf9fd]';
+        let situation_color = 'text-[#4cc9f0]';
 
-            if (item.featured === true || index === 0) {
-                situation = "Featured";
-                situation_bg = 'bg-gradient-to-r from-[#4361ee] to-[#7209b7]';
-                situation_color = 'text-white';
-            }
-            else if (item.is_shipped === true || item.status === 'completed' || item.status === 'delivered') {
-                situation = "YAKUNLANDI";
-                situation_bg = 'bg-[#eceffd]';
-                situation_color = 'text-[#4c68ef]';
-            }
-            else if (item.status === 'pending' || item.is_shipped === false) {
-                situation = "KUTILMOQDA";
-                situation_bg = 'bg-[#fee9f3]';
-                situation_color = 'text-[#f72585]';
-            }
-            else if (item.status === 'active' || item.is_shipped === null || item.is_shipped === undefined) {
-                situation = "FAOL";
-                situation_bg = 'bg-[#edf9fd]';
-                situation_color = 'text-[#4cc9f0]';
-            }
+        if (item.featured === true || index === 0) {
+            situation = "Featured";
+            situation_bg = 'bg-gradient-to-r from-[#4361ee] to-[#7209b7]';
+            situation_color = 'text-white';
+        }
+        else if (item.is_shipped === true || item.status === 'completed' || item.status === 'delivered') {
+            situation = "YAKUNLANDI";
+            situation_bg = 'bg-[#eceffd]';
+            situation_color = 'text-[#4c68ef]';
+        }
+        else if (item.status === 'pending' || item.is_shipped === false) {
+            situation = "KUTILMOQDA";
+            situation_bg = 'bg-[#fee9f3]';
+            situation_color = 'text-[#f72585]';
+        }
+        else if (item.status === 'active' || item.is_shipped === null || item.is_shipped === undefined) {
+            situation = "FAOL";
+            situation_bg = 'bg-[#edf9fd]';
+            situation_color = 'text-[#4cc9f0]';
+        }
 
-            return {
-                id: item.id || index,
-                l_num: `#YUK-${item.id || index}`,
-                situation: situation,
-                situation_bg: situation_bg,
-                situation_color: situation_color,
-                from_province: fromCity,
-                from_loc: fromRegion,
-                to_province: toCity,
-                to_loc: toRegion,
-                ton: item.weight || item.tonnage || 0,
-                m: item.volume || item.cubic_meter || 0,
-                product: item.freight_type || item.product_type || item.title || "Yuk",
-                type: item.body_type || item.vehicle_type || 'Yopiq',
-                date: item.created_at ? item.created_at.slice(0, 10) :
-                    (item.created_date ? item.created_date.slice(0, 10) : "Yangi"),
-                price: item.freight_rate_amount || item.price || item.rate
-                    ? parseInt(item.freight_rate_amount || item.price || item.rate).toLocaleString() + " so'm"
-                    : "Kelishilgan",
-                is_shipped: item.is_shipped,
-                status: item.status,
-                originalData: item
-            }
-        });
-    }, [apiLoads]);
+        return {
+            id: item.id || index,
+            l_num: `#YUK-${item.id || index}`,
+            situation: situation,
+            situation_bg: situation_bg,
+            situation_color: situation_color,
+            from_province: fromCity,
+            from_loc: fromRegion,
+            to_province: toCity,
+            to_loc: toRegion,
+            ton: item.weight || item.tonnage || 0,
+            m: item.volume || item.cubic_meter || 0,
+            product: item.freight_type || item.product_type || item.title || "Yuk",
+            type: item.body_type || item.vehicle_type || 'Yopiq',
+            date: item.created_at ? item.created_at.slice(0, 10) :
+                (item.created_date ? item.created_date.slice(0, 10) : "Yangi"),
+            price: item.freight_rate_amount || item.price || item.rate
+                ? parseInt(item.freight_rate_amount || item.price || item.rate).toLocaleString() + " so'm"
+                : "Kelishilgan",
+            is_shipped: item.is_shipped,
+            status: item.status,
+            originalData: item
+        }
+    });
+}, [apiLoads]);
 
     const filteredLoads = useMemo(() => {
         return filterLoads(mappedLoads, filter);

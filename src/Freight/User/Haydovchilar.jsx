@@ -446,12 +446,12 @@ function Haydovchilar() {
 
           {/* Tabs */}
           <div className="flex border-b border-gray-200 mb-6 overflow-x-auto">
-            <Tab id="all" label="Barcha haydovchilar" badge={156} active={activeTab === 'all'} />
-            <Tab id="online" label="Online" badge={89} active={activeTab === 'online'} />
+            <Tab id="all" label="Barcha haydovchilar" active={activeTab === 'all'} />
+            <Tab id="online" label="Online"  active={activeTab === 'online'} />
             <Tab id="verified" label="Tasdiqlangan" active={activeTab === 'verified'} />
-            <Tab id="available" label="Bo'sh" badge={12} active={activeTab === 'available'} />
+            <Tab id="available" label="Bo'sh"  active={activeTab === 'available'} />
             <Tab id="top" label="Top reyting" active={activeTab === 'top'} />
-            <Tab id="new" label="Yangi qo'shilgan" badge={8} active={activeTab === 'new'} />
+            <Tab id="new" label="Yangi qo'shilgan" active={activeTab === 'new'} />
           </div>
 
           {/* Drivers Grid */}

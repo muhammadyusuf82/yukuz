@@ -32,7 +32,9 @@ const MyCargos = ({ onFreightDetail }) => {
         loadData()
     }, [])
 
-    console.log(data);
+    // console.log(data);
+    console.log(user);
+    
     
     const handleFreightDetailClick = (freightData) => {
         // Call the parent function to navigate to freight detail page
@@ -41,7 +43,12 @@ const MyCargos = ({ onFreightDetail }) => {
 
     return (<>
         <div className="bg-white rounded-3xl p-8 shadow-sm">
-            <h2 className="text-2xl font-bold mb-4">Mening e'lon qilgan yuklarim</h2>
+            {user?.role === 'shipper' ? (
+  <h2 className="text-2xl font-bold mb-4">Mening e'lon qilgan yuklarim</h2>
+) : (
+  <h2 className="text-2xl font-bold mb-4">Mening yetkazgan yuklarim</h2>
+)}
+
         </div>
         <div className="grid grid-cols-3 my-5 gap-3">
             {data.map((item, index) => {

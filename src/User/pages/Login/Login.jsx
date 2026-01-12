@@ -939,14 +939,7 @@ const Login = () => {
                 {locationLoading ? t('locationLoading') : t('getLocation')}
               </button>
             </div>
-            {location.lat && location.lon ? (
-              <div className="text-xs text-zinc-600">
-                <p>Latitude: {location.lat.toFixed(6)}</p>
-                <p>Longitude: {location.lon.toFixed(6)}</p>
-              </div>
-            ) : (
-              <p className="text-xs text-zinc-500">{t('locationLoading')}</p>
-            )}
+            
           </div>
           
           {/* Divider */}

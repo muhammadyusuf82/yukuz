@@ -8,6 +8,7 @@ import Navbar from '../../components/User/Navbar/Navbar';
 import Footer from '../../components/User/Footer/Footer';
 
 import TruckVideo from "../../../videos/TrucksVideo.mp4"
+import { Link } from 'react-router-dom';
 
 // 1. BARCHA TARJIMALAR OBYEKTI
 const translations = {
@@ -478,14 +479,14 @@ const Home = () => {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-              <button className='bg-[#4361ee] text-white text-sm sm:text-base font-semibold border-2 border-[#4361ee] rounded-lg py-3 sm:py-4 px-6 sm:px-9 hover:bg-transparent hover:text-white duration-300 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95'>
+              <Link to={'/login'} className='bg-[#4361ee] text-center text-white text-sm sm:text-base font-semibold border-2 border-[#4361ee] rounded-lg py-3 sm:py-4 px-6 sm:px-9 hover:bg-transparent hover:text-white duration-300 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95'>
                 <FaBox className="text-lg" />
                 {t.btnSend}
-              </button>
-              <button className='text-white text-sm sm:text-base font-semibold border-2 border-white/50 rounded-lg py-3 sm:py-4 px-6 sm:px-9 hover:bg-white hover:text-[#4361ee] duration-300 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95 backdrop-blur-sm'>
+              </Link>
+              <Link to={'/login'} className='text-white text-sm sm:text-base font-semibold border-2 border-white/50 rounded-lg py-3 sm:py-4 px-6 sm:px-9 hover:bg-white hover:text-[#4361ee] duration-300 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95 backdrop-blur-sm'>
                 <FaTruck className="text-lg" />
                 {t.btnTransport}
-              </button>
+              </Link>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8 md:gap-10 mt-4 sm:mt-6">
@@ -618,8 +619,8 @@ const Home = () => {
                         <FaMapMarkerAlt className='text-base text-[#4361ee]' />
                       </div>
                       <div>
-                        <h4 className='text-lg font-bold'>{item.route_starts_where_city}</h4>
-                        <p className='text-base text-gray-500 mt-0.5'>{item.route_starts_where_region}</p>
+                        <h4 className='text-lg font-bold'>{item.route_starts_where_data.city}</h4>
+                        <p className='text-base text-gray-500 mt-0.5'>{item.route_starts_where_data.region}</p>
                       </div>
                     </div>
                     <div className="flex gap-3 items-center mt-4">
@@ -627,8 +628,8 @@ const Home = () => {
                         <FaFlagCheckered className='text-base text-[#4361ee]' />
                       </div>
                       <div>
-                        <h4 className='text-lg font-bold'>{item.route_ends_where_city}</h4>
-                        <p className='text-base text-gray-500 mt-0.5'>{item.route_ends_where_region}</p>
+                        <h4 className='text-lg font-bold'>{item.route_ends_where_data.city}</h4>
+                        <p className='text-base text-gray-500 mt-0.5'>{item.route_ends_where_data.region}</p>
                       </div>
                     </div>
                   </div>
@@ -652,7 +653,7 @@ const Home = () => {
                   </div>
                   <div className="flex items-center justify-between px-6 pb-5">
                     <h2 className='text-xl md:text-2xl text-[#4361ee] font-bold'>{formatter.format((item.freight_rate_amount ?? '').split('.')[0])} {item.freight_rate_currency}</h2>
-                    <button className='bg-[#4361ee] text-white text-base font-semibold border-2 border-[#4361ee] rounded-xl py-3 px-6 transform hover:-translate-y-1.5 hover:shadow-lg duration-300 cursor-pointer'>Taklif berish</button>
+                    <Link to={'/login'} className='bg-[#4361ee] text-white text-center text-base font-semibold border-2 border-[#4361ee] rounded-xl py-3 px-6 transform hover:-translate-y-1.5 hover:shadow-lg duration-300 cursor-pointer'>{lang === 'uz' ? 'Taklif berish' : '' || lang === 'en' ? 'Make an offer' : '' || lang === 'ru' ? 'Сделайте предложение' : ''}</Link>
                   </div>
                 </div>
 
@@ -661,10 +662,10 @@ const Home = () => {
           </div>
 
           <div className="flex justify-center pt-10">
-            <button className='flex gap-3 items-center bg-[#4361ee] text-white text-base font-semibold border-2 border-[#4361ee] rounded-xl py-4 px-8 transform hover:-translate-y-1.5 hover:shadow-lg duration-300 cursor-pointer'>
+            <Link to={'/login'} className='flex gap-3 items-center bg-[#4361ee] text-white text-base font-semibold border-2 border-[#4361ee] rounded-xl py-4 px-8 transform hover:-translate-y-1.5 hover:shadow-lg duration-300 cursor-pointer'>
               <FaList />
-              Barcha Yuklarni Ko'rish
-            </button>
+              {t.cargoItems.btnAll}
+            </Link>
 
           </div>
         </div>
@@ -696,10 +697,10 @@ const Home = () => {
           </div>
 
           <div className="flex justify-center pt-10">
-            <button className='flex gap-3 items-center bg-[#4361ee] text-white text-base font-semibold border-2 border-[#4361ee] rounded-xl py-4 px-8 transform hover:-translate-y-1.5 hover:shadow-lg duration-300 cursor-pointer'>
+            <Link to={'/login'} className='flex gap-3 items-center bg-[#4361ee] text-white text-base font-semibold border-2 border-[#4361ee] rounded-xl py-4 px-8 transform hover:-translate-y-1.5 hover:shadow-lg duration-300 cursor-pointer'>
               <FaTruck />
               {t.driverBtn}
-            </button>
+            </Link>
 
           </div>
         </div>

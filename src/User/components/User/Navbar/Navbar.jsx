@@ -135,7 +135,7 @@ const Navbar = ({ currentLang, onLangChange }) => {
               <button key={l.code} onClick={() => onLangChange(l.code)} className={`px-3 py-1 rounded ${currentLang === l.code ? 'bg-[#4361ee] text-white' : 'bg-gray-100'}`}>{l.label}</button>
             ))}
           </div>
-          <button className='w-full bg-[#4361ee] text-white rounded-lg py-2 font-semibold'>{t.register}</button>
+          <Link to={'/login'} className='w-full bg-[#4361ee] text-white text-center rounded-lg py-2 font-semibold'>{t.register}</Link>
         </ul>
       </div>
     </nav>

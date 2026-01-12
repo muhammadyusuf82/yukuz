@@ -501,14 +501,14 @@ const Yuk = () => {
   return (
     <div className='min-h-screen bg-zinc-100'>
       <Navbar />
-      <div className='container m-auto'>
+      <div className='container m-auto fullhdfix fullhdfix2 fullhdfix3'>
         <h1 className='py-8 text-5xl font-semibold max-sm:mx-3'>Yuklar</h1>
         <p className='text-xl text-gray-600 pb-3 max-sm:mx-3'>Barcha yuklaringizni boshqaring, kuzating va tahrirlang</p>
         
         {/* Statistikalar */}
         <div className="grid lg:grid-cols-2 gap-x-5">
           <div className="chart">
-            <div className="mt-10 justify-evenly bg-white my-2 rounded-2xl overflow-hidden flex w-full items-center p-4">
+            <div className="justify-evenly h-[95%] bg-white my-2 rounded-2xl overflow-hidden flex w-full items-center p-4">
               <div className="h-50 w-1/3">
                 <ResponsiveContainer width="100%" height={200}>
                   <PieChart>
