@@ -466,7 +466,7 @@ const Home = () => {
           <div className="w-full lg:w-2/3 flex flex-col gap-6 md:gap-8 lg:gap-10">
 
             <div className="text-center lg:text-left">
-              <h1 className='text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-white leading-tight md:leading-tight lg:leading-tight'>
+              <h1 className='text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-white leading-tight md:leading-tight lg:leading-tight'>
                 {t.heroTitle} <br className="hidden sm:block" />
                 <span className="bg-linear-to-br from-[#4cc9f0] to-[#4361ee] bg-clip-text text-transparent">
                   {t.heroSubtitle}
@@ -751,13 +751,13 @@ const Home = () => {
               return (
                 <div key={index} className="w-full max-w-3xl bg-white border border-gray-200 rounded-3xl duration-300 overflow-hidden cursor-pointer" onClick={() => { toggleAccordion(item.id) }}>
                   <div className="flex items-center justify-between bg-white duration-300 hover:bg-gray-50 p-8">
-                    <h2 className='text-base md:text-lg lg:text-xl font-semibold'>{item.question}</h2>
+                    <h2 className='text-lg md:text-xl font-semibold'>{item.question}</h2>
                     <FaPlus className={`text-[#4361ee] transform transition-transform duration-500 ease-in-out ${isOpen ? 'rotate-45' : 'rotate-0'}`} />
                   </div>
                   <div className={`grid transition-all duration-500 ease-in-out ${isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
                     <div className="overflow-hidden">
                       <div className='px-8 pb-8'>
-                        <p className='text-xs sm:text-sm md:text-base lg:text-lg text-gray-500 border-t border-gray-100 pt-4'>
+                        <p className='text-base md:text-lg text-gray-500 border-t border-gray-100 pt-4'>
                           {item.answer}
                         </p>
                       </div>
