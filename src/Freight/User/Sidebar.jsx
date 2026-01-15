@@ -6,8 +6,10 @@ const Sidebar = ({ onPageChange, activePage }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [activeId, setActiveId] = useState(1);
     const [user, setUser] = useState('')
-    // data load
+
+    // Ma'lumotlarni yuklash
     const token = localStorage.getItem('token')
+
     useEffect(() => {
         const loadData = async () => {
             try {
@@ -25,15 +27,12 @@ const Sidebar = ({ onPageChange, activePage }) => {
         }
         loadData()
     }, [])
-    console.log(user);
-    console.log(user.role);
 
-    // Sidebar.jsx yoki Home.jsx ichida
     const handleLogout = () => {
         const confirmLogout = window.confirm("Rostdan ham tizimdan chiqmoqchimisiz?");
         if (confirmLogout) {
             localStorage.removeItem('access_token');
-            window.location.href = '/login'; // Login sahifasiga yo'naltirish
+            window.location.href = '/login';
         }
     };
 
@@ -59,14 +58,14 @@ const Sidebar = ({ onPageChange, activePage }) => {
             </button>
 
             <div className={`
-        fixed top-20 lg:sticky lg:top-25 inset-y-0 left-0 z-40 w-72 bg-white shadow-2xl transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:shadow-lg lg:rounded-3xl
-        ${isOpen ? "translate-x-0" : "-translate-x-full"}
-      `}>
+                fixed top-20 lg:sticky lg:top-25 inset-y-0 left-0 z-40 w-72 bg-white shadow-2xl transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:shadow-lg lg:rounded-3xl
+                ${isOpen ? "translate-x-0" : "-translate-x-full"}
+            `}>
                 <div className="sticky flex flex-col h-full py-8 px-5 overflow-y-auto">
 
                     <div className="flex flex-col items-center mb-6">
                         <div className="w-20 h-20 rounded-full border-4 border-white shadow-lg bg-linear-to-br from-[#4361ee] to-[#7209b7] flex items-center justify-center text-white text-3xl font-bold">
-                            {/* {user.first_name.charAt(0)}{user.last_name.charAt(0)} */}
+                            {user?.first_name?.charAt(0)}{user?.last_name?.charAt(0)}
                         </div>
                         <h3 className="text-xl font-bold mt-3 text-slate-800">{user.first_name} {user.last_name}</h3>
                         <span className="text-xs font-bold text-[#4361ee] bg-blue-50 px-3 py-1 rounded-full uppercase mt-2">{user.role}</span>
@@ -82,16 +81,18 @@ const Sidebar = ({ onPageChange, activePage }) => {
 
                     <nav className="flex-1">
                         <ul className="space-y-2">
-                            {pages.map((item) => (
-                                <li
-                                    key={item.id}
-                                    onClick={() => onPageChange(item.title)}
-                                    className={`flex items-center gap-4 p-3 px-5 rounded-xl cursor-pointer transition-all
-            ${activePage === item.title ? "bg-linear-to-r from-[#4361ee] to-[#7209b7] text-white" : "text-slate-600"}`}>
-                                    <item.icon size={20} />
-                                    <span className="text-lg">{item.title}</span>
-                                </li>
-                            ))}
+                            {pages
+                                .filter(item => !(user?.role === 'driver' && item.title === "Yuk qo'shish"))
+                                .map((item) => (
+                                    <li
+                                        key={item.id}
+                                        onClick={() => onPageChange(item.title)}
+                                        className={`flex items-center gap-4 p-3 px-5 rounded-xl cursor-pointer transition-all
+                                    ${activePage === item.title ? "bg-linear-to-r from-[#4361ee] to-[#7209b7] text-white" : "text-slate-600"}`}>
+                                        <item.icon size={20} />
+                                        <span className="text-lg">{item.title}</span>
+                                    </li>
+                                ))}
                         </ul>
                     </nav>
 

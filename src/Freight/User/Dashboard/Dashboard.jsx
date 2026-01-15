@@ -52,13 +52,14 @@ function Dashboard({ onFreightDetail }) {
     const [filter, setFilter] = useState("Barchasi");
     const [currentPage, setCurrentPage] = useState(1);
     const [error, setError] = useState(null);
+    const [user, setUser] = useState(null)
 
     // Yuklarni olish funksiyasi
     const fetchNotes = async () => {
         setLoading(true);
         setError(null);
 
-        let token = localStorage.getItem('access_token');
+        let token = localStorage.getItem('token');
 
         if (!token) {
             token = await getAuthToken();
@@ -97,6 +98,22 @@ function Dashboard({ onFreightDetail }) {
                     setTimeout(() => {
                         fetchNotes();
                     }, 1000);
+                }
+            }
+
+            // Foydalanuvchi ma'lumotlarini (rolini) olish
+            const userResponse = await fetch('https://tokennoty.pythonanywhere.com/api/users/', {
+                headers: { 'Authorization': `Token ${token}` }
+            });
+            if (userResponse.ok) {
+                const userData = await userResponse.json();
+                console.log("API'dan kelgan foydalanuvchi ma'lumoti:", userData); // Tekshirish uchun
+
+                // Agar ma'lumot massiv bo'lib kelsa, birinchisini olamiz
+                if (Array.isArray(userData)) {
+                    setUser(userData[0]);
+                } else {
+                    setUser(userData);
                 }
             }
         } catch (err) {
@@ -208,90 +225,90 @@ function Dashboard({ onFreightDetail }) {
             total: statistics.inProgressCount,
             title: "Jarayonda"
         },
-        
+
     ], [statistics]);
 
     const actins = [
-        { id: 1, icon: FaPlus, icon_color: '#4361ee', title: 'Yuk qo\'shish', action: () => onFreightDetail('Yuk qo\'shish') },
-        { id: 2, icon: FaBox, icon_color: '#4cc9f0', title: 'Yuklarim', action: () => onFreightDetail('Mening yuklarim') },
-        { id: 3, icon: FaMapMarkerAlt, icon_color: '#f72585', title: 'Kuzatish', action: () => console.log('Kuzatish') },
-        { id: 4, icon: FaCreditCard, icon_color: '#7209b7', title: 'To\'lov', action: () => onFreightDetail('To\'lovlar') },
+        { id: 1, icon: FaPlus, icon_color: '#4361ee', title: 'Yuk qo\'shish', action: () => onFreightDetail("Yuk qo'shish") },
+        { id: 2, icon: FaBox, icon_color: '#4cc9f0', title: 'Yuklarim', action: () => onFreightDetail("Mening yuklarim") },
+        { id: 3, icon: FaMapMarkerAlt, icon_color: '#f72585', title: 'Kuzatish', action: () => console.log("Kuzatish") },
+        { id: 4, icon: FaCreditCard, icon_color: '#7209b7', title: 'To\'lov', action: () => onFreightDetail("To'lovlar") },
     ];
 
     const mappedLoads = useMemo(() => {
-    return apiLoads.map((item, index) => {
-        const fromCity = item.route_starts_where_data?.street ||
-            item.route_starts_where_city ||
-            item.origin_address ||
-            item.from_city ||
-            item.origin ||
-            "Aniqlanmagan";
+        return apiLoads.map((item, index) => {
+            const fromCity = item.route_starts_where_data?.street ||
+                item.route_starts_where_city ||
+                item.origin_address ||
+                item.from_city ||
+                item.origin ||
+                "Aniqlanmagan";
 
-        const fromRegion = item.route_starts_where_data?.region ||
-            item.route_starts_where_region ||
-            (item.route_starts_where_lat ? `Lat: ${item.route_starts_where_lat}` : "Viloyat");
+            const fromRegion = item.route_starts_where_data?.region ||
+                item.route_starts_where_region ||
+                (item.route_starts_where_lat ? `Lat: ${item.route_starts_where_lat}` : "Viloyat");
 
-        const toCity = item.route_ends_where_data?.street ||
-            item.route_ends_where_city ||
-            item.destination_address ||
-            item.to_city ||
-            item.destination ||
-            "Viloyat";
+            const toCity = item.route_ends_where_data?.street ||
+                item.route_ends_where_city ||
+                item.destination_address ||
+                item.to_city ||
+                item.destination ||
+                "Viloyat";
 
-        const toRegion = item.route_ends_where_data?.region ||
-            item.route_ends_where_region ||
-            (item.route_ends_where_lat ? `Lat: ${item.route_ends_where_lat}` : "Viloyat");
+            const toRegion = item.route_ends_where_data?.region ||
+                item.route_ends_where_region ||
+                (item.route_ends_where_lat ? `Lat: ${item.route_ends_where_lat}` : "Viloyat");
 
-        let situation = "FAOL";
-        let situation_bg = 'bg-[#edf9fd]';
-        let situation_color = 'text-[#4cc9f0]';
+            let situation = "FAOL";
+            let situation_bg = 'bg-[#edf9fd]';
+            let situation_color = 'text-[#4cc9f0]';
 
-        if (item.featured === true || index === 0) {
-            situation = "Featured";
-            situation_bg = 'bg-gradient-to-r from-[#4361ee] to-[#7209b7]';
-            situation_color = 'text-white';
-        }
-        else if (item.is_shipped === true || item.status === 'completed' || item.status === 'delivered') {
-            situation = "YAKUNLANDI";
-            situation_bg = 'bg-[#eceffd]';
-            situation_color = 'text-[#4c68ef]';
-        }
-        else if (item.status === 'pending' || item.is_shipped === false) {
-            situation = "KUTILMOQDA";
-            situation_bg = 'bg-[#fee9f3]';
-            situation_color = 'text-[#f72585]';
-        }
-        else if (item.status === 'active' || item.is_shipped === null || item.is_shipped === undefined) {
-            situation = "FAOL";
-            situation_bg = 'bg-[#edf9fd]';
-            situation_color = 'text-[#4cc9f0]';
-        }
+            if (item.featured === true || index === 0) {
+                situation = "Featured";
+                situation_bg = 'bg-gradient-to-r from-[#4361ee] to-[#7209b7]';
+                situation_color = 'text-white';
+            }
+            else if (item.is_shipped === true || item.status === 'completed' || item.status === 'delivered') {
+                situation = "YAKUNLANDI";
+                situation_bg = 'bg-[#eceffd]';
+                situation_color = 'text-[#4c68ef]';
+            }
+            else if (item.status === 'pending' || item.is_shipped === false) {
+                situation = "KUTILMOQDA";
+                situation_bg = 'bg-[#fee9f3]';
+                situation_color = 'text-[#f72585]';
+            }
+            else if (item.status === 'active' || item.is_shipped === null || item.is_shipped === undefined) {
+                situation = "FAOL";
+                situation_bg = 'bg-[#edf9fd]';
+                situation_color = 'text-[#4cc9f0]';
+            }
 
-        return {
-            id: item.id || index,
-            l_num: `#YUK-${item.id || index}`,
-            situation: situation,
-            situation_bg: situation_bg,
-            situation_color: situation_color,
-            from_province: fromCity,
-            from_loc: fromRegion,
-            to_province: toCity,
-            to_loc: toRegion,
-            ton: item.weight || item.tonnage || 0,
-            m: item.volume || item.cubic_meter || 0,
-            product: item.freight_type || item.product_type || item.title || "Yuk",
-            type: item.body_type || item.vehicle_type || 'Yopiq',
-            date: item.created_at ? item.created_at.slice(0, 10) :
-                (item.created_date ? item.created_date.slice(0, 10) : "Yangi"),
-            price: item.freight_rate_amount || item.price || item.rate
-                ? parseInt(item.freight_rate_amount || item.price || item.rate).toLocaleString() + " so'm"
-                : "Kelishilgan",
-            is_shipped: item.is_shipped,
-            status: item.status,
-            originalData: item
-        }
-    });
-}, [apiLoads]);
+            return {
+                id: item.id || index,
+                l_num: `#YUK-${item.id || index}`,
+                situation: situation,
+                situation_bg: situation_bg,
+                situation_color: situation_color,
+                from_province: fromCity,
+                from_loc: fromRegion,
+                to_province: toCity,
+                to_loc: toRegion,
+                ton: item.weight || item.tonnage || 0,
+                m: item.volume || item.cubic_meter || 0,
+                product: item.freight_type || item.product_type || item.title || "Yuk",
+                type: item.body_type || item.vehicle_type || 'Yopiq',
+                date: item.created_at ? item.created_at.slice(0, 10) :
+                    (item.created_date ? item.created_date.slice(0, 10) : "Yangi"),
+                price: item.freight_rate_amount || item.price || item.rate
+                    ? parseInt(item.freight_rate_amount || item.price || item.rate).toLocaleString() + " so'm"
+                    : "Kelishilgan",
+                is_shipped: item.is_shipped,
+                status: item.status,
+                originalData: item
+            }
+        });
+    }, [apiLoads]);
 
     const filteredLoads = useMemo(() => {
         return filterLoads(mappedLoads, filter);
@@ -372,7 +389,7 @@ function Dashboard({ onFreightDetail }) {
             <div className="w-full flex gap-3 sm:gap-4 md:gap-5 flex-col">
                 <div className="w-full bg-white shadow-lg border border-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 flex flex-col sm:flex-row gap-3 sm:gap-4 md:gap-6 items-center justify-between hover:border-blue-500 hover:shadow-xl transform hover:-translate-y-1 sm:hover:-translate-y-2 duration-300">
                     <div className='w-full sm:w-3/6 text-center sm:text-left'>
-                        <h2 className='text-xl sm:text-2xl md:text-3xl font-bold mb-1 sm:mb-2'>Xush kelibsiz, </h2>
+                        <h2 className='text-xl sm:text-2xl md:text-3xl font-bold mb-1 sm:mb-2'>Xush kelibsiz, {user?.first_name || "Foydalanuvchi"}</h2>
                         <p className='text-sm sm:text-base md:text-lg text-gray-600'>Bugun nima qilmoqchisiz? Yuklar soni: {apiLoads.length}</p>
                     </div>
                     <div className='flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto'>
@@ -433,14 +450,18 @@ function Dashboard({ onFreightDetail }) {
                         Tezkor Amallar
                     </h1>
                     <div className="grid gap-2 sm:gap-3 md:gap-4 lg:gap-5 grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 py-2 sm:py-3 md:py-4 lg:py-5 px-2 sm:px-3 md:px-4 lg:px-6">
-                        {actins.map((item, index) => {
-                            return (
-                                <div key={index} onClick={item.action} className="bg-white shadow-md border border-white rounded-lg flex gap-1 sm:gap-2 items-center flex-col p-2 sm:p-3 md:p-4 hover:border-blue-500 hover:shadow-lg transform hover:-translate-y-0.5 duration-300 cursor-pointer py-3 sm:py-4 md:py-5 lg:py-6">
+                        {actins
+                            .filter(item => {
+                                const isDriver = user?.role?.toLowerCase() === 'driver';
+                                const isAddFreightAction = item.title === "Yuk qo'shish";
+                                return !(isDriver && isAddFreightAction);
+                            })
+                            .map((item) => (
+                                <div key={item.id} onClick={item.action} className="bg-white shadow-md border border-white rounded-lg flex gap-1 sm:gap-2 items-center flex-col p-2 sm:p-3 md:p-4 hover:border-blue-500 hover:shadow-lg transform hover:-translate-y-0.5 duration-300 cursor-pointer py-3 sm:py-4 md:py-5 lg:py-6">
                                     <item.icon style={{ color: item.icon_color }} className='text-base sm:text-lg md:text-xl' />
                                     <span className='text-xs sm:text-sm md:text-base text-center px-1'>{item.title}</span>
                                 </div>
-                            )
-                        })}
+                            ))}
                     </div>
                 </div>
 
@@ -534,7 +555,7 @@ function Dashboard({ onFreightDetail }) {
 
                                     <div className="flex flex-col px-3 sm:px-4 md:px-5 lg:px-6 py-3 sm:py-4 md:py-5 lg:py-6 mt-auto gap-2 sm:gap-3">
                                         <h2 className='text-base sm:text-lg md:text-xl lg:text-2xl font-black text-[#4361ee] text-center sm:text-left'>{item.price}</h2>
-                                        <button 
+                                        <button
                                             onClick={() => handleFreightDetailClick(item)}
                                             className='bg-[#4361ee] text-white text-[10px] sm:text-xs md:text-sm font-bold uppercase tracking-wider rounded-lg sm:rounded-xl py-2 sm:py-2.5 md:py-3 px-3 sm:px-4 md:px-5 hover:bg-[#324fdb] transition-all cursor-pointer active:scale-95 w-full sm:w-auto'
                                         >

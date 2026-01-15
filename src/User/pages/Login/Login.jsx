@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom';
 import {
   FaTruckLoading,
@@ -16,19 +16,30 @@ import {
   FaMapMarkerAlt,
   FaRedo,
   FaCheck,
-  FaPhone,
-  FaLock,
-  FaUserCircle,
 } from "react-icons/fa";
 import { RiCheckboxCircleFill } from "react-icons/ri";
 
 const baseUrl = 'https://tokennoty.pythonanywhere.com/'
 
+// Flag images for languages
+const FLAG_IMAGES = {
+  uz: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/84/Flag_of_Uzbekistan.svg/1280px-Flag_of_Uzbekistan.svg.png',
+  ru: 'https://upload.wikimedia.org/wikipedia/en/thumb/f/f3/Flag_of_Russia.svg/1280px-Flag_of_Russia.svg.png',
+  en: 'https://upload.wikimedia.org/wikipedia/en/thumb/a/ae/Flag_of_the_United_Kingdom.svg/1280px-Flag_of_the_United_Kingdom.svg.png'
+};
+
+// Small flag icons for display
+const SMALL_FLAG_IMAGES = {
+  uz: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMTQiIHZpZXdCb3g9IjAgMCAyMCAxNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjIwIiBoZWlnaHQ9IjE0IiBmaWxsPSIjMDA5RTM2Ii8+CjxyZWN0IHk9IjMiIHdpZHRoPSIyMCIgaGVpZ2h0PSIxIiBmaWxsPSJ3aGl0ZSIvPgo8cmVjdCB5PSI0IiB3aWR0aD0iMjAiIGhlaWdodD0iMSIgZmlsbD0iI0RFQjQxMCIvPgo8cmVjdCB5PSI5IiB3aWR0aD0iMjAiIGhlaWdodD0iMSIgZmlsbD0id2hpdGUiLz4KPHJlY3QgeT0iMTAiIHdpZHRoPSIyMCIgaGVpZ2h0PSIxIiBmaWxsPSIjREVCNDEwIi8+CjxjaXJjbGUgY3g9IjEwIiBjeT0iNyIgcj0iMiIgZmlsbD0id2hpdGUiLz4KPGNpcmNsZSBjeD0iMTAiIGN5PSI3IiByPSIxLjUiIGZpbGw9IiMwMDlFMzYiLz4KPHBhdGggZD0iTTEwIDYuNUwxMSA4SDlMMTAgNi41WiIgZmlsbD0iI0RFQjQxMCIvPgo8L3N2Zz4K',
+  ru: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMTQiIHZpZXdCb3g9IjAgMCAyMCAxNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjIwIiBoZWlnaHQ9IjUiIGZpbGw9IiNmZmYiLz4KPHJlY3QgeT0iNSIgd2lkdGg9IjIwIiBoZWlnaHQ9IjQiIGZpbGw9IiMwMDciLz4KPHJlY3QgeT0iOSIgd2lkdGg9IjIwIiBoZWlnaHQ9IjUiIGZpbGw9IiNkNTIiLz4KPC9zdmc+',
+  en: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMTQiIHZpZXdCb3g9IjAgMCAyMCAxNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjIwIiBoZWlnaHQ9IjE0IiBmaWxsPSIjMDAyNDdEIi8+CjxwYXRoIGQ9Ik0yLjE4NSAwSDB2NUgyLjE4NXYtNU0wIDloMi4xODV2NUgwVjlNMjAgMUg1LjEyNXY0SDIwVjFNMjAgOUg1LjEyNXY0SDIwVjlNNy44NzUgMGgzLjc1djUuNUg3Ljg3NVYwTTcuODc1IDguNWgzLjc1VjE0SDcuODc1VjguNVoiIGZpbGw9IiNmZmYiLz4KPHBhdGggZD0iTTAgMEw4IDE0SDIwVjBIMCIgZmlsbD0iI0M4MTQxMiIvPgo8cGF0aCBkPSJNMS4wNjIgMEwwIDEuOTY4VjBoMS4wNjJNMCA0LjI1bDQuMDMxIDUuNzVIMFY0LjI1IiBmaWxsPSIjZmZmIi8+CjxwYXRoIGQ9Ik0xNC41ODMgMGg1LjA4M0wyMCA0LjNWMGgtNS40MTdNOC41IDBWNS41SDBWOWg4LjV2NUgwVjkuNzVsNS42MjUtNC4yNVYwaDNtNy41IDkuNzVMMjAgN1YxNC40MUgxNi4wODNWOS43NU0xMy45MTcgMTRIOD40NThWOC41SDBWN2g4LjQ1OFYwaDIuMjA5djdoOC41VjE0SDEzLjkxN1oiIGZpbGw9IiNDODE0MTIiLz4KPC9zdmc+'
+};
+
 const Login = () => {
   const [counter, setCounter] = useState(0)
   const [job, setJob] = useState(0)
   const [login, setLogin] = useState(true)
-  const [language, setLanguage] = useState(localStorage.getItem("language") || 'uz')
+  const [language, setLanguage] = useState(() => localStorage.getItem("language") || 'uz')
   const [formData, setFormData] = useState({
     phone: '',
     email: '',
@@ -46,15 +57,15 @@ const Login = () => {
   const [confirmationCode, setConfirmationCode] = useState(['', '', '', ''])
   const [confirmationLoading, setConfirmationLoading] = useState(false)
   const [resendCountdown, setResendCountdown] = useState(0)
-  const [verificationEmail, setVerificationEmail] = useState('')
-  const [isEmailVerified, setIsEmailVerified] = useState(false)
-  const [temporaryToken, setTemporaryToken] = useState('')
+  
+  // Store registration data for verification
+  const [registrationData, setRegistrationData] = useState(null)
   
   const navigate = useNavigate();
   const inputRefs = useRef([])
 
-  // Translations
-  const translations = {
+  // Translations with useMemo for optimization
+  const translations = useMemo(() => ({
     uz: {
       slogan: "O'zbekiston №1 Yuk Tashish Platformasi",
       welcome: "Xush kelibsiz!",
@@ -117,19 +128,7 @@ const Login = () => {
       invalidCode: "Noto'g'ri kod. Iltimos, qayta urinib ko'ring.",
       continueToApp: "Dasturga o'tish",
       didntReceiveCode: "Kodni olmadingizmi?",
-      back: "Orqaga",
-      enterEmailFirst: "Avval email manzilingizni kiriting",
-      emailVerification: "Email Tasdiqlash",
-      enterEmail: "Email manzilingizni kiriting",
-      sendCode: "Kod yuborish",
-      codeSent: "Emailingizga tasdiqlash kodi yuborildi",
-      verifyEmail: "Emailni tasdiqlang",
-      completeRegistration: "Ro'yxatdan o'tishni yakunlash",
-      emailRequired: "Email manzili talab qilinadi",
-      invalidEmailFormat: "Noto'g'ri email formati",
-      registrationComplete: "Ro'yxatdan o'tish yakunlandi!",
-      startRegistration: "Ro'yxatdan o'tishni boshlash",
-      emailVerified: "Email tasdiqlandi",
+      back: "Orqaga"
     },
     ru: {
       slogan: "Платформа грузоперевозок №1 в Узбекистане",
@@ -171,7 +170,7 @@ const Login = () => {
       requiredField: "Это поле обязательно для заполнения",
       passwordMismatch: "Пароли не совпадают",
       invalidPhone: "Номер телефона в неправильном формате (должно быть 9 цифр)",
-      invalidEmail: "Неправильный формат электронной почты",
+      invalidEmail: "Неправильный формат электронной почта",
       networkError: "Нет подключения к интернету. Пожалуйста, проверьте ваше интернет-соединение.",
       invalidCredentials: "Неверный номер телефона или пароль",
       loginWithGoogle: "Войти через Google",
@@ -193,19 +192,7 @@ const Login = () => {
       invalidCode: "Неверный код. Пожалуйста, попробуйте еще раз.",
       continueToApp: "Перейти в приложение",
       didntReceiveCode: "Не получили код?",
-      back: "Назад",
-      enterEmailFirst: "Сначала введите ваш email",
-      emailVerification: "Подтверждение Email",
-      enterEmail: "Введите ваш email",
-      sendCode: "Отправить код",
-      codeSent: "Код подтверждения отправлен на ваш email",
-      verifyEmail: "Подтвердите email",
-      completeRegistration: "Завершите регистрацию",
-      emailRequired: "Email обязателен",
-      invalidEmailFormat: "Неверный формат email",
-      registrationComplete: "Регистрация завершена!",
-      startRegistration: "Начать регистрацию",
-      emailVerified: "Email подтвержден",
+      back: "Назад"
     },
     en: {
       slogan: "Uzbekistan's #1 Freight Platform",
@@ -269,23 +256,11 @@ const Login = () => {
       invalidCode: "Invalid code. Please try again.",
       continueToApp: "Continue to app",
       didntReceiveCode: "Didn't receive the code?",
-      back: "Back",
-      enterEmailFirst: "First enter your email address",
-      emailVerification: "Email Verification",
-      enterEmail: "Enter your email",
-      sendCode: "Send Code",
-      codeSent: "Verification code sent to your email",
-      verifyEmail: "Verify Email",
-      completeRegistration: "Complete Registration",
-      emailRequired: "Email is required",
-      invalidEmailFormat: "Invalid email format",
-      registrationComplete: "Registration complete!",
-      startRegistration: "Start Registration",
-      emailVerified: "Email verified",
+      back: "Back"
     },
-  };
+  }), []);
 
-  // Helper function for translations
+  // Helper function for translations with useCallback
   const t = useCallback((key) => {
     const translation = translations[language]?.[key] || key;
     
@@ -300,7 +275,7 @@ const Login = () => {
     }
     
     return translation;
-  }, [language, login, job, resendCountdown]);
+  }, [language, login, job, resendCountdown, translations]);
 
   // Location functions
   const getUserLocation = useCallback(() => {
@@ -349,7 +324,7 @@ const Login = () => {
   }, [language, getUserLocation]);
 
   // Form handlers
-  const handleChange = (e) => {
+  const handleChange = useCallback((e) => {
     const { name, value } = e.target;
     
     if (name === 'phone') {
@@ -367,22 +342,10 @@ const Login = () => {
     
     if (error) setError('');
     if (success) setSuccess('');
-  };
-
-  // Handle email input for verification
-  const handleEmailChange = (e) => {
-    const { value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      email: value
-    }));
-    
-    if (error) setError('');
-    if (success) setSuccess('');
-  };
+  }, [error, success]);
 
   // Confirmation code handlers
-  const handleCodeChange = (index, value) => {
+  const handleCodeChange = useCallback((index, value) => {
     const newCode = [...confirmationCode];
     newCode[index] = value.replace(/\D/g, '').slice(0, 1);
     setConfirmationCode(newCode);
@@ -392,75 +355,75 @@ const Login = () => {
     }
     
     if (error) setError('');
-  };
+  }, [confirmationCode, error]);
 
-  const handleCodeKeyDown = (index, e) => {
+  const handleCodeKeyDown = useCallback((index, e) => {
     if (e.key === 'Backspace' && !confirmationCode[index] && index > 0 && inputRefs.current[index - 1]) {
       inputRefs.current[index - 1].focus();
     }
-  };
+  }, [confirmationCode]);
 
-  // Step 1: Send verification code to email
-  const handleSendVerificationCode = async (e) => {
-    e?.preventDefault();
-    e?.stopPropagation();
+  // Resend confirmation code
+  const handleResendCode = async () => {
+    if (resendCountdown > 0) return;
     
-    const email = formData.email.trim();
-    
-    if (!email) {
-      setError(t('emailRequired'));
-      return;
-    }
-    
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setError(t('invalidEmailFormat'));
-      return;
-    }
-    
-    setLoading(true);
+    setResendCountdown(30);
     setError('');
-    setSuccess('');
     
     try {
-      // Step 1: Send email to get verification code
-      // This endpoint should exist on your backend
-      const response = await fetch(`${baseUrl}api/users/`, {
+      const response = await fetch(`${baseUrl}api/resend-verification/${formData.email}/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 
-          email: email,
-          // role: job === 1 ? 'shipper' : 'driver' 
+      });
+
+      if (response.ok) {
+        setSuccess(t('confirmationSent'));
+      } else {
+        setError(t('errorMessage'));
+      }
+    } catch (err) {
+      console.error('Resend error:', err);
+      setError(t('errorMessage'));
+    }
+  };
+
+  // Get token after successful verification
+  const getAuthToken = async (phone, password) => {
+    try {
+      const response = await fetch(baseUrl + 'api/token/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          phone_number: `+998${phone}`,
+          password: password,
+          role: job === 1 ? 'Yuk beruvchi' : 'Haydovchi',
         })
       });
 
       const responseData = await response.json();
 
-      if (response.ok) {
-        setVerificationEmail(email);
-        setSuccess(t('codeSent'));
-        setResendCountdown(30);
-        
-        // If backend returns a temporary token, store it
-        if (responseData.temp_token) {
-          setTemporaryToken(responseData.temp_token);
-        }
-        
-        // Move to verification step
-        setCounter(3);
-      } else {
-        setError(responseData.detail || responseData.error || t('errorMessage'));
+      if (!response.ok) {
+        throw new Error(responseData.detail || responseData.error || t('invalidCredentials'));
       }
-    } catch (err) {
-      console.error('Send verification error:', err);
-      setError(t('networkError'));
-    } finally {
-      setLoading(false);
+
+      if (responseData.token) {
+        localStorage.setItem('token', responseData.token);
+        return responseData.token;
+      }
+
+      throw new Error(t('errorMessage'));
+    } catch (error) {
+      console.error('Token API Error:', error);
+      throw error;
     }
   };
 
-  // Step 2: Verify the code
+  // Verify confirmation code and get token
   const handleVerifyCode = async () => {
     const code = confirmationCode.join('');
     
@@ -471,93 +434,182 @@ const Login = () => {
     
     setConfirmationLoading(true);
     setError('');
-    setSuccess('');
     
     try {
-      // Step 2: Verify the code with the email
-      const response = await fetch(`${baseUrl}api/verify-user/${verificationEmail}/${code}/`, {
+      const userData = {
+        username: registrationData.phone,
+        phone_number: `+998${registrationData.phone}`,
+        email: registrationData.email,
+        telegram: "",
+        facebook: "",
+        whatsapp: "",
+        is_verified: false,
+        password: registrationData.password,
+        role: registrationData.role === 1 ? 'shipper' : 'driver',
+      };
+      
+      const response = await fetch(`${baseUrl}api/verify-user/${registrationData.email}/${code}/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-        }
+        },
+        body: JSON.stringify(userData)
       });
 
-      const responseData = await response.json();
-
       if (response.ok) {
-        if (responseData.verified) {
-          setIsEmailVerified(true);
+        const data = await response.json();
+        
+        try {
+          const token = await getAuthToken(registrationData.phone, registrationData.password);
+          localStorage.setItem('token', token);
+          
+          localStorage.setItem('user', JSON.stringify({
+            phone: `+998${registrationData.phone}`,
+            email: registrationData.email,
+            role: registrationData.role === 1 ? 'shipper' : 'driver',
+            language: registrationData.language,
+            location: location,
+            isVerified: true
+          }));
+          
           setSuccess(t('codeVerified'));
           
-          // Store verification token if provided
-          if (responseData.verification_token) {
-            setTemporaryToken(responseData.verification_token);
-          }
-          
-          // Move to complete registration step
           setTimeout(() => {
-            setCounter(4);
-            setConfirmationCode(['', '', '', '']);
-            setSuccess('');
+            navigate('/profile-setup');
           }, 1000);
-        } else {
-          setError(t('invalidCode'));
+        } catch (tokenError) {
+          setError(t('errorMessage'));
         }
       } else {
-        setError(responseData.detail || responseData.error || t('invalidCode'));
+        const errorData = await response.json();
+        setError(errorData.detail || errorData.error || t('invalidCode'));
       }
     } catch (err) {
       console.error('Verification error:', err);
-      setError(t('networkError'));
+      setError(t('errorMessage'));
     } finally {
       setConfirmationLoading(false);
     }
   };
 
-  // Resend confirmation code
-  const handleResendCode = async () => {
-    if (resendCountdown > 0) return;
-    
-    setResendCountdown(30);
-    setError('');
-    setSuccess('');
-    
+  // Form validation
+  const validateForm = useCallback(() => {
+    if (login) {
+      return formData.phone.length === 9 && formData.password.trim() !== '';
+    } else {
+      const baseValidation = formData.phone.length === 9 && 
+                            formData.password.trim() !== '' && 
+                            formData.confirmPassword.trim() !== '';
+      const passwordMatch = formData.password === formData.confirmPassword;
+      
+      const emailValid = formData.email === '' || 
+                        /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email);
+      
+      return baseValidation && passwordMatch && emailValid;
+    }
+  }, [login, formData]);
+
+  // Clean phone number
+  const cleanPhoneNumber = (phone) => phone.replace(/\D/g, '').slice(0, 9);
+
+  // API functions
+  const performLogin = async (phone, password) => {
     try {
-      const response = await fetch(`${baseUrl}api/resend-verification-code/`, {
+      const loginData = {
+        phone_number: `+998${phone}`,
+        password: password,
+        role: job === 1 ? 'Yuk beruvchi' : 'Haydovchi',
+      };
+
+      const response = await fetch(baseUrl + 'api/token/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
-        body: JSON.stringify({ 
-          email: verificationEmail,
-        })
+        body: JSON.stringify(loginData)
       });
 
       const responseData = await response.json();
 
-      if (response.ok) {
-        setSuccess(t('confirmationSent'));
-      } else {
-        setError(responseData.detail || responseData.error || t('errorMessage'));
+      if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          throw new Error(t('invalidCredentials'));
+        }
+        const errorMsg = responseData.detail || responseData.error || responseData.message || `Login failed (${response.status})`;
+        throw new Error(errorMsg);
       }
-    } catch (err) {
-      console.error('Resend error:', err);
-      setError(t('errorMessage'));
+
+      if (responseData.token) {
+        localStorage.setItem('token', responseData.token);
+      }
+
+      return responseData;
+    } catch (error) {
+      console.error('Login API Error:', error);
+      throw error;
     }
   };
 
-  // Step 3: Complete registration with all data
-  const handleCompleteRegistration = async (e) => {
+  const performRegistration = async (data) => {
+    const apiData = {
+      username: data.phone,
+      phone_number: `+998${data.phone}`,
+      email: data.email || "",
+      telegram: "",
+      facebook: "",
+      whatsapp: "",
+      is_verified: false,
+      password: data.password,
+      role: job === 1 ? 'shipper' : 'driver',
+    };
+    
+    const response = await fetch(baseUrl + 'api/users/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify(apiData)
+    });
+    localStorage.setItem('job', job === 1 ? 'shipper' : 'driver')
+
+    const responseData = await response.json();
+    
+    if (!response.ok) {
+      if (response.status === 400) {
+        if (responseData.phone_number) {
+          throw new Error(`Phone number error: ${responseData.phone_number[0]}`);
+        } else if (responseData.email) {
+          throw new Error(`Email error: ${responseData.email[0]}`);
+        }
+        throw new Error(`Registration error: ${JSON.stringify(responseData)}`);
+      } else if (response.status === 409) {
+        throw new Error('This phone number is already registered. Please login instead.');
+      }
+      throw new Error(`Registration failed with status: ${response.status}`);
+    }
+
+    return responseData;
+  };
+
+  // Main submit handler for registration - collects data and sends verification
+  const handleRegistrationSubmit = async (e) => {
     e.preventDefault();
     e.stopPropagation();
     
     setError('');
     setSuccess('');
     
-    const cleanedPhone = formData.phone.replace(/\D/g, '').slice(0, 9);
+    const cleanedPhone = cleanPhoneNumber(formData.phone);
     
     if (cleanedPhone.length !== 9) {
       setError(t('invalidPhone'));
+      return;
+    }
+    
+    if (!formData.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      setError(t('invalidEmail'));
       return;
     }
     
@@ -576,85 +628,28 @@ const Login = () => {
     setLoading(true);
     
     try {
-      // Step 3: Complete registration with all data
-      const apiData = {
-        username: cleanedPhone,
-        phone_number: `+998${cleanedPhone}`,
-        email: verificationEmail,
-        telegram: "",
-        facebook: "",
-        whatsapp: "",
-        is_verified: true,
+      const submitData = {
+        phone: cleanedPhone,
+        email: formData.email,
         password: formData.password,
-        role: job === 1 ? 'shipper' : 'driver',
-        verification_token: temporaryToken || '',
-        ...(job === 2 && formData.document ? { document: formData.document } : {})
+        role: job,
+        language: language
       };
       
-      const response = await fetch(baseUrl + 'api/users/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify(apiData)
+      await performRegistration(submitData);
+      
+      setRegistrationData({
+        phone: cleanedPhone,
+        email: formData.email,
+        password: formData.password,
+        role: job,
+        language: language
       });
       
-      localStorage.setItem('job', job === 1 ? 'shipper' : 'driver')
-
-      const responseData = await response.json();
+      setResendCountdown(30);
+      setCounter(3);
       
-      if (!response.ok) {
-        if (response.status === 400) {
-          if (responseData.phone_number) {
-            throw new Error(`Phone number error: ${responseData.phone_number[0]}`);
-          } else if (responseData.email) {
-            throw new Error(`Email error: ${responseData.email[0]}`);
-          }
-          throw new Error(`Registration error: ${JSON.stringify(responseData)}`);
-        } else if (response.status === 409) {
-          throw new Error(language === 'uz' ? 'Bu telefon raqami allaqachon ro\'yxatdan o\'tgan. Iltimos, tizimga kiring.' : 
-                         language === 'ru' ? 'Этот номер телефона уже зарегистрирован. Пожалуйста, войдите в систему.' : 
-                         'This phone number is already registered. Please login instead.');
-        }
-        throw new Error(`Registration failed with status: ${response.status}`);
-      }
-      
-      // Get token after successful registration
-      const tokenResponse = await fetch(baseUrl + 'api/token/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify({
-          phone_number: `+998${cleanedPhone}`,
-          password: formData.password,
-          role: job === 1 ? 'Yuk beruvchi' : 'Haydovchi',
-        })
-      });
-
-      const tokenData = await tokenResponse.json();
-
-      if (tokenResponse.ok && tokenData.token) {
-        localStorage.setItem('token', tokenData.token);
-        localStorage.setItem('user', JSON.stringify({
-          phone: `+998${cleanedPhone}`,
-          email: verificationEmail,
-          role: job,
-          language: language,
-          location: location,
-          isVerified: true
-        }));
-        
-        setSuccess(t('successRegister'));
-        
-        setTimeout(() => {
-          navigate('/profile-setup');
-        }, 1500);
-      } else {
-        throw new Error(t('errorMessage'));
-      }
+      setSuccess(t('confirmationSent'));
     } catch (error) {
       console.error('Registration error:', error);
       
@@ -668,15 +663,15 @@ const Login = () => {
     }
   };
 
-  // Regular login (unchanged)
-  const handleLogin = async (e) => {
+  // Regular login handler
+  const handleLoginSubmit = async (e) => {
     e.preventDefault();
     e.stopPropagation();
     
     setError('');
     setSuccess('');
     
-    const cleanedPhone = formData.phone.replace(/\D/g, '').slice(0, 9);
+    const cleanedPhone = cleanPhoneNumber(formData.phone);
     
     if (cleanedPhone.length !== 9) {
       setError(t('invalidPhone'));
@@ -691,39 +686,17 @@ const Login = () => {
     setLoading(true);
     
     try {
-      const response = await fetch(baseUrl + 'api/token/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify({
-          phone_number: `+998${cleanedPhone}`,
-          password: formData.password,
-          role: job === 1 ? 'Yuk beruvchi' : 'Haydovchi',
-        })
-      });
-
-      const responseData = await response.json();
-
-      if (!response.ok) {
-        throw new Error(responseData.detail || responseData.error || t('invalidCredentials'));
-      }
-
-      if (responseData.token) {
-        localStorage.setItem('token', responseData.token);
-        localStorage.setItem('user', JSON.stringify({
-          phone: `+998${cleanedPhone}`,
-          email: formData.email,
-          role: job,
-          language: language,
-          location: location
-        }));
-        setSuccess(t('successLogin'));
-        navigate('/freight/asosiy');
-      } else {
-        throw new Error(t('errorMessage'));
-      }
+      await performLogin(cleanedPhone, formData.password);
+      setSuccess(t('successLogin'));
+      
+      localStorage.setItem('user', JSON.stringify({
+        phone: `+998${cleanedPhone}`,
+        email: formData.email,
+        role: job,
+        language: language,
+        location: location
+      }));
+      navigate('/freight/asosiy');
     } catch (error) {
       console.error('Login error:', error);
       
@@ -762,32 +735,32 @@ const Login = () => {
         <div 
           key={roleId}
           onClick={() => setJob(roleId)} 
-          className={`flex justify-center px-4 cursor-pointer items-center gap-x-3 md:gap-x-6 border-2 transition-all duration-300 rounded-2xl mx-5 py-5 ${job === roleId ? 'border-blue-700' : 'border-zinc-200'} ${roleId === 2 ? 'my-3' : ''}`}
+          className={`flex justify-center px-4 cursor-pointer items-center gap-x-3 md:gap-x-6 border-2 transition-all duration-300 rounded-2xl mx-5 py-5 ${job === roleId ? 'border-blue-700 shadow-lg shadow-blue-200' : 'border-zinc-200 hover:border-blue-300'} ${roleId === 2 ? 'my-3' : ''}`}
         >
-          <p className={`p-3 rounded-xl ${roleId === 1 ? 'bg-blue-600' : 'bg-purple-700'}`}>
+          <p className={`p-3 rounded-xl ${roleId === 1 ? 'bg-blue-600' : 'bg-purple-700'} shadow-md`}>
             {roleId === 1 ? <FaBox className='text-white text-xl' /> : <FaTruck className='text-white text-xl' />}
           </p>
           <div className='flex-1'>
-            <h1 className='text-lg'>{t(roleId === 1 ? "sender" : "driver")}</h1>
+            <h1 className='text-lg font-semibold text-zinc-800'>{t(roleId === 1 ? "sender" : "driver")}</h1>
             <p className='text-zinc-600 text-sm'>{t(roleId === 1 ? "senderDesc" : "driverDesc")}</p>
           </div>
-          <p><FaAngleRight className='text-2xl text-zinc-800' /></p>
+          <p><FaAngleRight className={`text-2xl transition-transform duration-300 ${job === roleId ? 'text-blue-700 scale-110' : 'text-zinc-800'}`} /></p>
         </div>
       ))}
       
       <button 
         onClick={() => setCounter(counter + 1)} 
         disabled={job === 0} 
-        className='flex cursor-pointer justify-center mx-5 rounded-xl bg-blue-700 transition-all duration-200 items-center gap-x-2 py-3 text-white disabled:bg-blue-700/50 disabled:cursor-not-allowed'
+        className='flex cursor-pointer justify-center mx-5 rounded-xl bg-gradient-to-r from-blue-600 to-blue-800 transition-all duration-300 items-center gap-x-2 py-3 text-white disabled:bg-blue-700/50 disabled:cursor-not-allowed hover:shadow-lg hover:shadow-blue-500/30 transform hover:-translate-y-0.5'
       >
-        <FaArrowRight className='inline' />{t("continue")}
+        <FaArrowRight className='inline transition-transform duration-300 group-hover:translate-x-1' />{t("continue")}
       </button>
       <p className='text-center py-4 text-zinc-600'>
         {t("haveAccount")} 
         <button 
           type="button" 
           onClick={() => {setCounter(2); setLogin(true);}} 
-          className='text-blue-700 cursor-pointer ml-1'
+          className='text-blue-700 cursor-pointer ml-1 font-medium hover:text-blue-800 transition-colors'
         >
           {t("login")}
         </button>
@@ -805,71 +778,125 @@ const Login = () => {
         <div 
           key={lang}
           onClick={() => setLanguage(lang)} 
-          className={`flex justify-between px-4 cursor-pointer items-center gap-x-5 border-2 transition-all duration-300 rounded-2xl mx-5 py-5 ${language === lang ? 'border-blue-700' : 'border-zinc-300'}`}
+          className={`relative overflow-hidden flex justify-between px-4 cursor-pointer items-center gap-x-5 border-2 transition-all duration-300 rounded-2xl mx-5 py-5 ${language === lang ? 'border-blue-700 shadow-lg shadow-blue-100 bg-blue-50' : 'border-zinc-300 hover:border-blue-400 hover:shadow-md bg-white'} group`}
         >
+          {/* Content */}
           <div className='flex gap-x-5 items-center'>
-            <div>
-              <p className={`p-3 rounded-lg font-medium ${lang === 'uz' ? 'uzb-bg' : lang === 'ru' ? 'rus-bg text-white' : 'eng-bg'}`}>
-                {lang.toUpperCase()}
-              </p>
+            <div className="relative">
+              {/* Flag container with beautiful flag image */}
+              <div 
+                className="p-3 rounded-lg font-medium text-white shadow-lg overflow-hidden border border-zinc-200"
+                style={{
+                  backgroundImage: `url(${FLAG_IMAGES[lang]})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  width: '48px',
+                  height: '48px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  position: 'relative'
+                }}
+              >
+                {/* Dark overlay for better text visibility */}
+                <div className="absolute inset-0 bg-black/30"></div>
+                {/* Small flag icon in corner */}
+                
+                <span className="relative z-10 font-bold text-white drop-shadow-md">
+                  {lang.toUpperCase()}
+                </span>
+              </div>
             </div>
             <div>
-              <p className='text-xl text-zinc-900'>
+              <p className='text-lg font-medium text-zinc-800'>
                 {lang === 'uz' ? "O'zbekcha" : lang === 'ru' ? "Русский" : "English"}
               </p>
-              <p className='text-zinc-600'>
+              <p className='text-zinc-600 text-sm'>
                 {lang === 'uz' ? "O'zbek tili" : lang === 'ru' ? "Русский язык" : "English language"}
               </p>
             </div>
           </div>
-          {language === lang && <RiCheckboxCircleFill className='text-2xl text-blue-700' />}
+          {language === lang && (
+            <RiCheckboxCircleFill className='text-2xl text-blue-600 animate-pulse' />
+          )}
         </div>
       ))}
       
-      <div className='flex justify-center mx-5 rounded-xl bg-blue-700 cursor-pointer transition-all duration-200'>
+      <div className='flex justify-center mx-5 rounded-xl bg-gradient-to-r from-blue-600 to-blue-800 cursor-pointer transition-all duration-300 transform hover:-translate-y-0.5 hover:shadow-lg hover:shadow-blue-500/30'>
         <button onClick={() => setCounter(counter + 1)} className='flex items-center cursor-pointer gap-x-2 py-3 text-white'>
-          <FaArrowRight className='inline' />{t("continue")}
+          <FaArrowRight className='inline transition-transform duration-300 group-hover:translate-x-1' />{t("continue")}
         </button>
       </div>
       <p className='text-center py-4 text-zinc-600'>
         {t("haveAccount")} 
-        <button type="button" onClick={() => {setCounter(2); setLogin(true);}} className='text-blue-700 cursor-pointer ml-1'>
+        <button type="button" onClick={() => {setCounter(2); setLogin(true);}} className='text-blue-700 cursor-pointer ml-1 font-medium hover:text-blue-800 transition-colors'>
           {t("login")}
         </button>
       </p>
     </div>
   );
 
-  const renderLoginForm = () => (
+  const renderLoginRegisterForm = () => (
     <div className="w-full h-full">
-      <form onSubmit={handleLogin}>
+      <form onSubmit={login ? handleLoginSubmit : handleRegistrationSubmit}>
         <div className="px-7 flex flex-col gap-y-1 py-4">
           <div>
-            <h1 className='font-medium text-zinc-800 text-3xl py-3'>
+            <h1 className={`font-medium text-zinc-800 text-3xl py-3 ${login ? '' : 'hidden'}`}>
               {t('login')}
             </h1>
-            <p>{t('loginText')}</p>
+            <h1 className={`font-medium text-zinc-800 text-3xl py-3 ${login ? 'hidden' : ''}`}>
+              {t('register')}
+            </h1>
+            <p className={`text-zinc-600 ${login ? '' : 'hidden'}`}>{t('loginText')}</p>
+            <p className={`text-zinc-600 ${login ? 'hidden' : ''}`}>{t('registerText')}</p>
           </div>
           
           {/* Success/Error Messages */}
           {success && (
-            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-3">
+            <div className="bg-gradient-to-r from-green-50 to-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-xl relative mb-3 animate-fadeIn">
               <span className="block sm:inline">{success}</span>
             </div>
           )}
           
           {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-3">
+            <div className="bg-gradient-to-r from-red-50 to-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-xl relative mb-3 animate-fadeIn">
               <span className="block sm:inline">{error}</span>
             </div>
           )}
           
+          {/* Login/Register Tabs */}
+          <div className='grid grid-cols-2 text-center text-zinc-600 py-4'>
+            {['login', 'register'].map((tab) => (
+              <button 
+                key={tab}
+                type="button" 
+                onClick={() => {
+                  setLogin(tab === 'login');
+                  setError('');
+                  setSuccess('');
+                  if (tab === 'login') {
+                    setFormData(prev => ({...prev, confirmPassword: ''}));
+                  }
+                }} 
+                className={`md:text-xl cursor-pointer py-2 transition-all duration-300 ${(tab === 'login' && login) || (tab === 'register' && !login) ? 'border-b-3 border-blue-700 text-blue-700 font-semibold' : 'border-b-3 border-zinc-300 hover:text-blue-600'}`}
+              >
+                {t(tab)}
+              </button>
+            ))}
+          </div>
+          
           {/* Phone Input */}
           <p className='py-2 text-sm font-medium text-zinc-800'>{t('phone')}</p>
-          <div className='grid grid-cols-5'>
+          <div className='grid grid-cols-5 gap-2'>
             <div>
-              <p className='sm:p-3 p-2 col-span-1 bg-zinc-200 border border-zinc-300 rounded-xl'>
-                <FaFlag className='inline' /> +998
+              <p className='sm:p-3 p-2 col-span-1 bg-gradient-to-r from-zinc-100 to-zinc-200 border border-zinc-300 rounded-xl shadow-sm flex items-center justify-center'>
+                <img 
+                  src={SMALL_FLAG_IMAGES[language]} 
+                  alt="flag" 
+                  className="w-4 h-3 mr-2 rounded-sm inline-block"
+                  style={{verticalAlign: 'middle'}}
+                />
+                +998
               </p>
             </div>
             <input 
@@ -878,7 +905,7 @@ const Login = () => {
               name="phone"
               value={formData.phone}
               onChange={handleChange}
-              className='border col-span-4 mx-2 px-3 rounded-xl outline-0 border-zinc-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500' 
+              className='border col-span-4 px-3 rounded-xl outline-0 border-zinc-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-300 shadow-sm' 
               placeholder='90 123 45 67'
               pattern="[0-9]{9}"
               title={t('invalidPhone')}
@@ -886,8 +913,44 @@ const Login = () => {
               maxLength="9"
             />
           </div>
+
+          {/* Email Field (Registration only) */}
+          {!login && (
+            <>
+              <p className='py-2 text-sm font-medium text-zinc-800'>{t('email')}</p>
+              <div className='relative'>
+                <FaEnvelope className='absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-400' />
+                <input 
+                  type="email" 
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  placeholder={t('emailPlaceholder')} 
+                  className='outline-0 border border-zinc-300 rounded-xl p-3 w-[99%] pl-10 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-300 shadow-sm' 
+                  autoComplete="email"
+                  required
+                />
+              </div>
+            </>
+          )}
           
-          {/* Password Field */}
+          {/* Document Field (Driver registration only) */}
+          {!login && job === 2 && (
+            <>
+              <p className='pt-4 pb-2 text-sm font-medium text-zinc-800'>{t('document')}</p>
+              <input 
+                type="text" 
+                name="document"
+                value={formData.document}
+                onChange={handleChange}
+                placeholder='AA 1234567' 
+                className='outline-0 border border-zinc-300 rounded-xl p-3 w-[99%] focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-300 shadow-sm' 
+              />
+              <p className='text-xs text-zinc-500 py-2'>{t('addable')}</p>
+            </>
+          )}
+          
+          {/* Password Fields */}
           <p className='py-2 text-sm font-medium text-zinc-800'>{t('password')}</p>
           <input 
             required 
@@ -896,22 +959,41 @@ const Login = () => {
             value={formData.password}
             onChange={handleChange}
             placeholder={t('placeholder_1')} 
-            className='outline-0 border border-zinc-300 rounded-xl p-3 w-[99%] focus:border-blue-500 focus:ring-1 focus:ring-blue-500' 
+            className='outline-0 border border-zinc-300 rounded-xl p-3 w-[99%] focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-300 shadow-sm' 
             minLength="3"
-            autoComplete="current-password"
+            autoComplete={login ? "current-password" : "new-password"}
           />
           
+          {!login && (
+            <>
+              <p className='py-2 text-sm font-medium text-zinc-800'>{t('confirmPassword')}</p>
+              <input 
+                required
+                type="password" 
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                placeholder={t('place_holder_2')} 
+                className='outline-0 border border-zinc-300 rounded-xl p-3 w-[99%] focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-300 shadow-sm' 
+                minLength="6"
+                autoComplete="new-password"
+              />
+            </>
+          )}
+          
           {/* Forgot Password */}
-          <button type="button" className='underline text-xs font-medium text-blue-700 cursor-pointer text-left'>
-            {t('forgotPassword')}
-          </button>
+          {login && (
+            <button type="button" className='underline text-xs font-medium text-blue-700 cursor-pointer text-left hover:text-blue-800 transition-colors'>
+              {t('forgotPassword')}
+            </button>
+          )}
           
           {/* Submit Button */}
-          <div className='flex my-2 justify-center rounded-xl bg-blue-700 transition-all duration-200'>
+          <div className='flex my-2 justify-center rounded-xl bg-gradient-to-r from-blue-600 to-blue-800 transition-all duration-300 transform hover:-translate-y-0.5 hover:shadow-lg hover:shadow-blue-500/30'>
             <button 
               type="submit" 
-              disabled={loading || formData.phone.length !== 9 || !formData.password}
-              className={`flex items-center justify-center gap-x-2 py-4 text-white w-full rounded-xl ${loading || formData.phone.length !== 9 || !formData.password ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-800'}`}
+              disabled={!validateForm() || loading}
+              className={`flex items-center justify-center gap-x-2 py-4 text-white w-full rounded-xl transition-all duration-300 ${!validateForm() || loading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-800'}`}
             >
               {loading ? (
                 <>
@@ -920,148 +1002,125 @@ const Login = () => {
                 </>
               ) : (
                 <>
-                  <FaArrowRight className='inline' />
-                  <span>{t('login')}</span>
+                  <FaArrowRight className='inline transition-transform duration-300 group-hover:translate-x-1' />
+                  <span>{login ? t('login') : t('register')}</span>
                 </>
               )}
             </button>
           </div>
+
+          {/* Location Display */}
+          <div className="p-4 border border-zinc-200 rounded-xl bg-gradient-to-r from-zinc-50 to-white shadow-sm">
+            <div className="flex items-center justify-between mb-2">
+              <span className="flex items-center gap-2 text-sm font-medium text-zinc-800">
+                <FaMapMarkerAlt className="text-blue-600 animate-pulse" />
+                {t('getLocation')}
+              </span>
+              <button 
+                onClick={getUserLocation}
+                disabled={locationLoading}
+                className="text-xs bg-gradient-to-r from-blue-100 to-blue-200 text-blue-700 px-3 py-1 rounded-lg hover:from-blue-200 hover:to-blue-300 transition-all duration-300 shadow-sm"
+              >
+                {locationLoading ? (
+                  <span className="flex items-center gap-1">
+                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-700"></div>
+                    {t('locationLoading')}
+                  </span>
+                ) : t('getLocation')}
+              </button>
+            </div>
+          </div>
           
-          {/* Don't have account? */}
-          <p className='text-center py-4 text-zinc-600'>
-            {language === 'uz' ? "Akkauntingiz yo'qmi?" : 
-             language === 'ru' ? "Нет аккаунта?" : 
-             "Don't have an account?"} 
+          {/* Divider */}
+          <div className="flex justify-center items-center gap-x-3 my-4">
+            <div className="bg-gradient-to-r from-zinc-300 to-transparent h-0.5 flex-1"></div>
+            <p className='text-zinc-700 font-medium'>{t('or')}</p>
+            <div className="bg-gradient-to-l from-zinc-300 to-transparent h-0.5 flex-1"></div>
+          </div>
+          
+          {/* Social Login Buttons */}
+          <div className="grid grid-cols-1 gap-3 mb-4">
             <button 
               type="button" 
-              onClick={() => {setLogin(false); setCounter(2);}} 
-              className='text-blue-700 cursor-pointer ml-1'
+              onClick={handleGoogleLogin}
+              className='flex items-center justify-center gap-x-3 p-3 rounded-xl border border-zinc-300 hover:border-red-400 hover:shadow-lg transition-all duration-300 bg-white transform hover:-translate-y-0.5'
             >
-              {t("register")}
+              <div className="w-10 h-10 flex items-center justify-center rounded-lg bg-white border border-zinc-200 shadow-sm">
+                <FaGoogle className='text-red-500 text-lg' />
+              </div>
+              <span className='flex-1 text-left font-medium text-zinc-700'>
+                {t('loginWithGoogle')}
+              </span>
             </button>
+            
+            <button 
+              type="button" 
+              onClick={handleFacebookLogin}
+              className='flex items-center justify-center gap-x-3 p-3 rounded-xl border border-blue-600 hover:border-blue-700 hover:shadow-lg transition-all duration-300 bg-gradient-to-r from-blue-600 to-blue-700 text-white transform hover:-translate-y-0.5'
+            >
+              <div className="w-10 h-10 flex items-center justify-center rounded-lg bg-white shadow-sm">
+                <FaFacebook className='text-blue-600 text-lg' />
+              </div>
+              <span className='flex-1 text-left font-medium'>
+                {t('loginWithFacebook')}
+              </span>
+            </button>
+            
+            <button 
+              type="button" 
+              onClick={handleOneIDLogin}
+              className='flex items-center justify-center gap-x-3 p-3 rounded-xl border border-purple-600 hover:border-purple-700 hover:shadow-lg transition-all duration-300 bg-gradient-to-r from-purple-600 to-indigo-600 text-white transform hover:-translate-y-0.5'
+            >
+              <div className="w-10 h-10 flex items-center justify-center rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 shadow-sm">
+                <FaKey className='text-white text-lg' />
+              </div>
+              <span className='flex-1 text-left font-medium'>
+                {t('loginWithOneID')}
+              </span>
+            </button>
+          </div>
+          
+          {/* Terms Agreement */}
+          <p className='text-xs py-2 text-center text-zinc-600'>
+            {t('agreeText_1')} 
+            <span className='text-blue-700 cursor-pointer mx-1 hover:text-blue-800 transition-colors'>{t('agreeText_2')}</span> 
+            {t('and')} 
+            <span className='text-blue-700 cursor-pointer mx-1 hover:text-blue-800 transition-colors'>{t('agreeText_3')}</span>
           </p>
         </div>
       </form>
     </div>
   );
 
-  const renderEmailStep = () => (
-    <div className="w-full h-full">
-      <form onSubmit={handleSendVerificationCode}>
-        <div className="px-7 flex flex-col gap-y-1 py-4">
-          <div className="text-center mb-4">
-            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
-              <FaEnvelope className="text-2xl text-blue-600" />
-            </div>
-            <h1 className='font-medium text-zinc-800 text-2xl py-2'>
-              {t('enterEmailFirst')}
-            </h1>
-            <p className="text-zinc-600">{t('registerText')}</p>
-          </div>
-          
-          {/* Success/Error Messages */}
-          {success && (
-            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-3">
-              <span className="block sm:inline">{success}</span>
-            </div>
-          )}
-          
-          {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-3">
-              <span className="block sm:inline">{error}</span>
-            </div>
-          )}
-          
-          {/* Email Field */}
-          <p className='py-2 text-sm font-medium text-zinc-800'>{t('enterEmail')}</p>
-          <div className='relative mb-4'>
-            <FaEnvelope className='absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-400' />
-            <input 
-              type="email" 
-              name="email"
-              value={formData.email}
-              onChange={handleEmailChange}
-              placeholder={t('emailPlaceholder')} 
-              className='outline-0 border border-zinc-300 rounded-xl p-3 w-full pl-10 focus:border-blue-500 focus:ring-2 focus:ring-blue-200' 
-              autoComplete="email"
-              required
-              disabled={loading}
-            />
-          </div>
-          
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4">
-            <p className="text-sm text-blue-800">
-              <FaCheck className="inline mr-2" />
-              {language === 'uz' ? "Emailingizga 4 raqamli tasdiqlash kodi yuboriladi" : 
-               language === 'ru' ? "На ваш email будет отправлен 4-значный код подтверждения" : 
-               "A 4-digit verification code will be sent to your email"}
-            </p>
-          </div>
-          
-          {/* Submit Button */}
-          <div className='flex my-2 justify-center rounded-xl bg-blue-700 transition-all duration-200'>
-            <button 
-              type="submit" 
-              disabled={loading || !formData.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)}
-              className={`flex items-center justify-center gap-x-2 py-4 text-white w-full rounded-xl ${loading || !formData.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email) ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-800'}`}
-            >
-              {loading ? (
-                <>
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                  <span>{t('loading')}</span>
-                </>
-              ) : (
-                <>
-                  <FaArrowRight className='inline' />
-                  <span>{t('sendCode')}</span>
-                </>
-              )}
-            </button>
-          </div>
-          
-          {/* Already have account? */}
-          <p className='text-center py-4 text-zinc-600'>
-            {t("haveAccount")} 
-            <button 
-              type="button" 
-              onClick={() => {setLogin(true); setCounter(2);}} 
-              className='text-blue-700 cursor-pointer ml-1'
-            >
-              {t("login")}
-            </button>
-          </p>
-        </div>
-      </form>
-    </div>
-  );
-
-  const renderEmailVerification = () => (
+  const renderEmailConfirmation = () => (
     <div className="w-full h-full">
       <div className="px-7 flex flex-col gap-y-4 py-8">
         <div className="text-center">
-          <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <FaEnvelope className="text-3xl text-blue-600" />
+          <div className="w-20 h-20 bg-gradient-to-r from-green-100 to-green-200 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+            <FaEnvelope className="text-3xl text-green-600" />
           </div>
-          <h1 className="text-2xl font-medium text-zinc-800 mb-2">{t('verifyEmail')}</h1>
+          <h1 className="text-2xl font-medium text-zinc-800 mb-2">{t('confirmEmail')}</h1>
           <p className="text-zinc-600 mb-1">{t('confirmationSent')}</p>
-          <p className="text-sm text-blue-600 font-medium">
-            {verificationEmail}
-          </p>
-          <p className="text-sm text-amber-600 font-medium mt-2">
+          <p className="text-sm text-amber-600 font-medium animate-pulse">
             <FaCheck className="inline mr-1" />
             {t('checkSpam')}
           </p>
+          {registrationData?.email && (
+            <p className="text-sm text-blue-600 font-medium mt-2">
+              Email: {registrationData.email}
+            </p>
+          )}
         </div>
         
         {/* Success/Error Messages */}
         {success && (
-          <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-3">
+          <div className="bg-gradient-to-r from-green-50 to-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-xl relative mb-3 animate-fadeIn">
             <span className="block sm:inline">{success}</span>
           </div>
         )}
         
         {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-3">
+          <div className="bg-gradient-to-r from-red-50 to-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-xl relative mb-3 animate-fadeIn">
             <span className="block sm:inline">{error}</span>
           </div>
         )}
@@ -1080,8 +1139,7 @@ const Login = () => {
                 value={confirmationCode[index]}
                 onChange={(e) => handleCodeChange(index, e.target.value)}
                 onKeyDown={(e) => handleCodeKeyDown(index, e)}
-                className="w-16 h-16 text-3xl text-center border-2 border-zinc-300 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
-                disabled={confirmationLoading}
+                className="w-16 h-16 text-3xl text-center border-2 border-zinc-300 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all duration-300 shadow-sm hover:border-blue-400"
               />
             ))}
           </div>
@@ -1091,7 +1149,7 @@ const Login = () => {
         <button
           onClick={handleVerifyCode}
           disabled={confirmationLoading || confirmationCode.join('').length !== 4}
-          className="flex justify-center items-center gap-x-2 py-4 text-white w-full rounded-xl bg-blue-700 hover:bg-blue-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex justify-center items-center gap-x-2 py-4 text-white w-full rounded-xl bg-gradient-to-r from-blue-600 to-blue-800 hover:shadow-lg hover:shadow-blue-500/30 transform hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
         >
           {confirmationLoading ? (
             <>
@@ -1112,10 +1170,9 @@ const Login = () => {
           <button
             onClick={handleResendCode}
             disabled={resendCountdown > 0}
-            className={`inline-flex items-center gap-x-2 px-4 py-2 rounded-lg transition-all ${
-              resendCountdown > 0
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-blue-100 text-blue-700 hover:bg-blue-200 cursor-pointer'
+            className={`inline-flex items-center gap-x-2 px-4 py-2 rounded-lg transition-all duration-300 ${resendCountdown > 0
+                ? 'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-400 cursor-not-allowed'
+                : 'bg-gradient-to-r from-blue-100 to-blue-200 text-blue-700 hover:from-blue-200 hover:to-blue-300 hover:shadow-md cursor-pointer'
             }`}
           >
             <FaRedo className={resendCountdown > 0 ? 'animate-spin' : ''} />
@@ -1123,7 +1180,7 @@ const Login = () => {
           </button>
         </div>
         
-        {/* Back to email input */}
+        {/* Back to registration button */}
         <button
           onClick={() => {
             setCounter(2);
@@ -1131,7 +1188,7 @@ const Login = () => {
             setError('');
             setSuccess('');
           }}
-          className="text-center text-blue-700 hover:text-blue-800 cursor-pointer mt-4"
+          className="text-center text-blue-700 hover:text-blue-800 cursor-pointer mt-4 transition-colors duration-300"
         >
           ← {t('back')}
         </button>
@@ -1139,201 +1196,28 @@ const Login = () => {
     </div>
   );
 
-  const renderCompleteRegistration = () => (
-    <div className="w-full h-full">
-      <form onSubmit={handleCompleteRegistration}>
-        <div className="px-7 flex flex-col gap-y-1 py-4">
-          <div className="text-center mb-6">
-            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
-              <FaUserCircle className="text-3xl text-green-600" />
-            </div>
-            <h1 className='font-medium text-zinc-800 text-2xl py-2'>
-              {t('completeRegistration')}
-            </h1>
-            <div className="inline-flex items-center gap-2 bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-medium">
-              <FaCheck className="text-xs" />
-              <span>{t('emailVerified')}: {verificationEmail}</span>
-            </div>
-          </div>
-          
-          {/* Success/Error Messages */}
-          {success && (
-            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-3">
-              <span className="block sm:inline">{success}</span>
-            </div>
-          )}
-          
-          {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-3">
-              <span className="block sm:inline">{error}</span>
-            </div>
-          )}
-          
-          {/* Phone Input */}
-          <p className='py-2 text-sm font-medium text-zinc-800'>{t('phone')}</p>
-          <div className='grid grid-cols-5 mb-3'>
-            <div>
-              <p className='sm:p-3 p-2 col-span-1 bg-zinc-200 border border-zinc-300 rounded-xl'>
-                <FaFlag className='inline' /> +998
-              </p>
-            </div>
-            <input 
-              required 
-              type="tel" 
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-              className='border col-span-4 mx-2 px-3 rounded-xl outline-0 border-zinc-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500' 
-              placeholder='90 123 45 67'
-              pattern="[0-9]{9}"
-              title={t('invalidPhone')}
-              inputMode="numeric"
-              maxLength="9"
-              disabled={loading}
-            />
-          </div>
-          
-          {/* Document Field (Driver registration only) */}
-          {job === 2 && (
-            <>
-              <p className='pt-2 pb-2 text-sm font-medium text-zinc-800'>{t('document')}</p>
-              <input 
-                type="text" 
-                name="document"
-                value={formData.document}
-                onChange={handleChange}
-                placeholder={language === 'uz' ? 'AA 1234567' : 'AA 1234567'} 
-                className='outline-0 border border-zinc-300 rounded-xl p-3 w-full mb-3 focus:border-blue-500 focus:ring-2 focus:ring-blue-200' 
-                disabled={loading}
-              />
-              <p className='text-xs text-zinc-500 py-1 mb-2'>{t('addable')}</p>
-            </>
-          )}
-          
-          {/* Password Fields */}
-          <p className='py-2 text-sm font-medium text-zinc-800'>{t('password')}</p>
-          <input 
-            required 
-            type="password" 
-            name="password"
-            value={formData.password}
-            onChange={handleChange}
-            placeholder={t('placeholder_1')} 
-            className='outline-0 border border-zinc-300 rounded-xl p-3 w-full mb-3 focus:border-blue-500 focus:ring-2 focus:ring-blue-200' 
-            minLength="6"
-            autoComplete="new-password"
-            disabled={loading}
-          />
-          
-          <p className='py-2 text-sm font-medium text-zinc-800'>{t('confirmPassword')}</p>
-          <input 
-            required
-            type="password" 
-            name="confirmPassword"
-            value={formData.confirmPassword}
-            onChange={handleChange}
-            placeholder={t('place_holder_2')} 
-            className='outline-0 border border-zinc-300 rounded-xl p-3 w-full mb-6 focus:border-blue-500 focus:ring-2 focus:ring-blue-200' 
-            minLength="6"
-            autoComplete="new-password"
-            disabled={loading}
-          />
-          
-          {/* Location Display */}
-          <div className="p-4 border border-zinc-200 rounded-xl mb-6">
-            <div className="flex items-center justify-between mb-2">
-              <span className="flex items-center gap-2 text-sm font-medium text-zinc-800">
-                <FaMapMarkerAlt className="text-blue-600" />
-                {t('getLocation')}
-              </span>
-              <button 
-                type="button"
-                onClick={getUserLocation}
-                disabled={locationLoading}
-                className="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-lg hover:bg-blue-200 transition-colors disabled:opacity-50"
-              >
-                {locationLoading ? t('locationLoading') : t('getLocation')}
-              </button>
-            </div>
-            {location.lat && location.lon && (
-              <p className="text-xs text-green-600 mt-2">
-                ✓ {t('locationSuccess')}
-              </p>
-            )}
-          </div>
-          
-          {/* Terms Agreement */}
-          <p className='text-xs py-2 text-center text-zinc-600 mb-4'>
-            {t('agreeText_1')} 
-            <span className='text-blue-700 cursor-pointer mx-1'>{t('agreeText_2')}</span> 
-            {t('and')} 
-            <span className='text-blue-700 cursor-pointer mx-1'>{t('agreeText_3')}</span>
-          </p>
-          
-          {/* Submit Button */}
-          <div className='flex my-2 justify-center rounded-xl bg-blue-700 transition-all duration-200'>
-            <button 
-              type="submit" 
-              disabled={loading || formData.phone.length !== 9 || !formData.password || formData.password !== formData.confirmPassword}
-              className={`flex items-center justify-center gap-x-2 py-4 text-white w-full rounded-xl ${loading || formData.phone.length !== 9 || !formData.password || formData.password !== formData.confirmPassword ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-800'}`}
-            >
-              {loading ? (
-                <>
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                  <span>{t('loading')}</span>
-                </>
-              ) : (
-                <>
-                  <FaCheck className="inline" />
-                  <span>{t('register')}</span>
-                </>
-              )}
-            </button>
-          </div>
-          
-          {/* Back to verification */}
-          <button
-            type="button"
-            onClick={() => {
-              setCounter(3);
-              setError('');
-              setSuccess('');
-            }}
-            className="text-center text-blue-700 hover:text-blue-800 cursor-pointer mt-4"
-          >
-            ← {t('back')}
-          </button>
-        </div>
-      </form>
-    </div>
-  );
-
   // Main render
   return (
-    <div className='main-bg p-5 min-h-screen flex items-center justify-center'>
-      <div className="lg:w-2/5 md:w-3/5 sm:w-4/5 w-full max-w-md m-auto">
+    <div className='p-5 min-h-screen main-bg'>
+      <div className="lg:w-2/5 md:w-3/5 sm:w-4/5 m-auto">
         {/* Header */}
-        <div className="rounded-t-2xl main-bg text-center p-5 text-white">
-          <div className="flex justify-evenly items-center py-3">
+        <div className="rounded-t-2xl main-bg text-center p-5 text-white shadow-xl">
+          <div className="flex justify-evenly items-center py-5">
             <button 
               onClick={() => {
                 if (counter === 3) {
-                  setCounter(2); // Go back to email step
-                } else if (counter === 4) {
-                  setCounter(3); // Go back to verification step
+                  setCounter(2);
                 } else {
                   setCounter(Math.max(0, counter - 1));
                 }
-                setError('');
-                setSuccess('');
               }} 
-              className={`p-3 cursor-pointer rounded-xl bg-white/20 hover:bg-white/40 transition-all duration-200 ${counter === 0 ? 'invisible' : 'visible'}`}
+              className={`p-3 cursor-pointer rounded-xl bg-white/20 hover:bg-white/40 transition-all duration-300 transform hover:scale-110 ${counter === 0 ? 'invisible' : 'visible'}`}
             >
               <FaArrowLeft />
             </button>
-            <h1 className='text-2xl items-center flex justify-center'>
-              <span className='p-2 mx-2 bg-white/20 rounded-2xl'>
-                <FaTruckLoading className='inline mx-1' />
+            <h1 className='text-3xl items-center flex justify-center'>
+              <span className='p-2 mx-2 bg-white/20 rounded-2xl backdrop-blur-sm'>
+                <FaTruckLoading className='inline mx-2' />
               </span> 
               Yuk.uz
             </h1>
@@ -1341,31 +1225,38 @@ const Login = () => {
           </div>
           
           {/* Header Content */}
-          <div className="py-3">
-            {counter === 0 && <p className='py-2 text-sm'>{t("slogan")}</p>}
-            {counter === 1 && <h1 className='text-xl'>{t("chooseLang")}</h1>}
-            {counter === 2 && login && (
-              <span className='text-center bg-white/30 py-1 px-3 rounded-full text-sm'>
-                <FaUser className='inline mx-1' />
+          <div>
+            {counter === 0 && <p className='py-4 text-white/90'>{t("slogan")}</p>}
+            {counter === 1 && <h1 className='text-2xl font-semibold'>{t("chooseLang")}</h1>}
+            {counter === 2 && (
+              <span className='text-center bg-white/30 py-2 px-4 rounded-full backdrop-blur-sm'>
+                <FaUser className='inline my-4 mx-1' />
                 {job === 1 ? t("role_1") : t("role_2")}
               </span>
             )}
-            {counter === 2 && !login && <h1 className='text-xl'>{t("startRegistration")}</h1>}
-            {counter === 3 && <h1 className='text-xl'>{t("emailVerification")}</h1>}
-            {counter === 4 && <h1 className='text-xl'>{t("completeRegistration")}</h1>}
+            {counter === 3 && <h1 className='text-2xl font-semibold'>{t("confirmEmail")}</h1>}
           </div>
         </div>
 
         {/* Content */}
-        <div className="bg-white rounded-b-2xl overflow-hidden relative min-h-[500px] shadow-lg">
+        <div className="bg-white rounded-b-2xl overflow-hidden relative min-h-[600px] shadow-2xl">
           {counter === 0 && renderRoleSelection()}
           {counter === 1 && renderLanguageSelection()}
-          {counter === 2 && login && renderLoginForm()}
-          {counter === 2 && !login && renderEmailStep()}
-          {counter === 3 && renderEmailVerification()}
-          {counter === 4 && renderCompleteRegistration()}
+          {counter === 2 && renderLoginRegisterForm()}
+          {counter === 3 && renderEmailConfirmation()}
         </div>
       </div>
+      
+      {/* Add CSS animations */}
+      <style jsx>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(-10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fadeIn {
+          animation: fadeIn 0.3s ease-out;
+        }
+      `}</style>
     </div>
   )
 }

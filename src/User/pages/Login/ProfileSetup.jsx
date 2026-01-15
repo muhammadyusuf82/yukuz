@@ -11,7 +11,9 @@ import {
   FaCheck,
   FaTimes,
   FaChevronDown,
-  FaChevronUp
+  FaChevronUp,
+  FaUserTie,
+  FaBuilding
 } from 'react-icons/fa';
 import { GiCheckMark } from "react-icons/gi";
 import { BsFillFuelPumpFill } from "react-icons/bs";
@@ -124,6 +126,11 @@ const CustomDropdown = ({
 };
 
 const ProfileSetup = () => {
+  // Get user role from localStorage
+  const role = localStorage.getItem('job'); // 'shipper' or 'driver'
+  const isDriver = role === 'driver';
+  const isShipper = role === 'shipper';
+  
   // States
   const [counter, setCounter] = useState(0);
   const [volume, setVolume] = useState('');
@@ -139,6 +146,7 @@ const ProfileSetup = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [companyName, setCompanyName] = useState('');
 
   // Memoized values
   const progressWidth = useMemo(() => {
@@ -383,6 +391,33 @@ const ProfileSetup = () => {
     }
   }, [state, district]);
 
+  // Dynamic step titles based on role
+  const stepTitles = useMemo(() => {
+    if (isDriver) {
+      return ['Asosiy ma\'lumotlar', 'Kontakt ma\'lumotlari', 'Transport ma\'lumotlari', 'Ma\'lumotlarni tasdiqlash'];
+    } else {
+      return ['Asosiy ma\'lumotlar', 'Kontakt ma\'lumotlari', 'Qo\'shimcha ma\'lumotlar', 'Ma\'lumotlarni tasdiqlash'];
+    }
+  }, [isDriver]);
+
+  const stepDescriptions = useMemo(() => {
+    if (isDriver) {
+      return [
+        'Profilingizni to\'ldirish uchun quyidagi maydonlarni to\'ldiring.',
+        'Bog\'lanish uchun kontakt ma\'lumotlaringizni kiriting.',
+        'Yuk tashish uchun transport ma\'lumotlaringizni kiriting.',
+        'Kiritgan ma\'lumotlaringizni tekshiring va tasdiqlang.'
+      ];
+    } else {
+      return [
+        'Profilingizni to\'ldirish uchun quyidagi maydonlarni to\'ldiring.',
+        'Bog\'lanish uchun kontakt ma\'lumotlaringizni kiriting.',
+        'Yuk jo\'natish bilan bog\'liq qo\'shimcha ma\'lumotlaringizni kiriting.',
+        'Kiritgan ma\'lumotlaringizni tekshiring va tasdiqlang.'
+      ];
+    }
+  }, [isDriver]);
+
   // Event handlers
   const handleImageChange = useCallback((e) => {
     const file = e.target.files[0];
@@ -402,18 +437,31 @@ const ProfileSetup = () => {
       const token = localStorage.getItem('token');
       const fullAddress = `${state}${district ? `, ${district}` : ''}${address ? `, ${address}` : ''}`;
       
+      // Prepare data based on role
+      const userData = {
+        first_name: firstName,
+        last_name: lastName,
+        address: fullAddress,
+        role: role
+      };
+
+      // Add driver-specific fields if driver
+      if (isDriver) {
+        userData.driver_license = document;
+        userData.transport_type = transportType;
+        userData.transport_capacity = volume;
+      } else {
+        // Add shipper-specific fields if shipper
+        userData.company_name = companyName;
+      }
+      
       const response = await fetch(baseUrl+'api/users/', {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Token ${token}`
         },
-        body: JSON.stringify({
-          first_name: firstName,
-          last_name: lastName,
-          address: fullAddress,
-          role: localStorage.getItem('job')
-        })
+        body: JSON.stringify(userData)
       });
 
       if (!response.ok) {
@@ -437,13 +485,28 @@ const ProfileSetup = () => {
     } finally {
       setLoading(false);
     }
-  }, [firstName, lastName, state, district, address,]);
+  }, [firstName, lastName, state, district, address, document, transportType, volume, companyName, role, isDriver]);
 
   const handleNext = useCallback(() => {
+    // Define validations for each step
     const validations = [
+      // Step 0: Basic info
       () => !firstName || !lastName ? 'Ism va familiya talab qilinadi' : null,
+      
+      // Step 1: Contact info
       () => !state || !address ? 'Shahar va asosiy manzil talab qilinadi' : null,
-      () => !document || !volume || !transportType ? 'Transport ma\'lumotlarini to\'ldiring' : null,
+      
+      // Step 2: Transport/Additional info
+      () => {
+        if (isDriver) {
+          return !document || !volume || !transportType ? 'Transport ma\'lumotlarini to\'ldiring' : null;
+        } else {
+          // Shipper doesn't need transport info
+          return null;
+        }
+      },
+      
+      // Step 3: Review (always valid)
       () => null
     ];
 
@@ -458,7 +521,7 @@ const ProfileSetup = () => {
     } else {
       submitHandle();
     }
-  }, [counter, firstName, lastName, state, address, document, volume, transportType, submitHandle]);
+  }, [counter, firstName, lastName, state, address, document, volume, transportType, isDriver, submitHandle]);
 
   const handlePrev = useCallback(() => {
     if (counter > 0) {
@@ -516,6 +579,19 @@ const ProfileSetup = () => {
                 />
               </div>
             </div>
+            
+            {/* Company name for shipper */}
+            {isShipper && (
+              <div className="mt-4">
+                <label className='text-sm sm:text-base block mb-1'>Kompaniya nomi (ixtiyoriy)</label>
+                <input 
+                  value={companyName}
+                  onChange={(e) => setCompanyName(e.target.value)}
+                  placeholder='Kompaniya nomi' 
+                  className='border-2 outline-none focus:border-blue-700 px-3 border-gray-300 py-2 rounded-lg w-full transition-colors text-sm sm:text-base'
+                />
+              </div>
+            )}
           </div>
         );
 
@@ -560,56 +636,95 @@ const ProfileSetup = () => {
       case 2:
         return (
           <div className="space-y-4">
-            <div>
-              <label className='block mb-1 text-sm sm:text-base'>Haydovchilik guvohnomasi raqami <span className="text-red-500">*</span></label>
-              <input 
-                value={document}
-                onChange={(e) => setDocument(e.target.value)}
-                placeholder='AA 1234567' 
-                className='w-full p-3 border-2 border-gray-300 outline-none rounded-xl transition-colors focus:border-blue-700 text-sm sm:text-base'
-              />
-            </div>
-            
-            <div>
-              <label className='block mb-1 text-sm sm:text-base'>Transport turi <span className="text-red-500">*</span></label>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-                {transportOptions.map((item) => (
-                  <button
-                    key={item.type}
-                    type="button"
-                    onClick={() => setTransportType(item.type)}
-                    className={`flex flex-col items-center justify-center p-3 sm:p-4 border-2 rounded-xl sm:rounded-2xl transition-all min-h-[100px] sm:min-h-[120px] ${
-                      transportType === item.type 
-                        ? 'border-blue-700 bg-blue-700/10 shadow-md' 
-                        : 'border-gray-300 hover:border-blue-500 hover:shadow-sm'
-                    }`}
-                  >
-                    {item.icon}
-                    <span className="mt-2 text-xs sm:text-sm text-center">{item.type}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
+            {isDriver ? (
+              // Driver-specific fields
+              <>
+                <div>
+                  <label className='block mb-1 text-sm sm:text-base'>Haydovchilik guvohnomasi raqami <span className="text-red-500">*</span></label>
+                  <input 
+                    value={document}
+                    onChange={(e) => setDocument(e.target.value)}
+                    placeholder='AA 1234567' 
+                    className='w-full p-3 border-2 border-gray-300 outline-none rounded-xl transition-colors focus:border-blue-700 text-sm sm:text-base'
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className='block mb-1 text-sm sm:text-base'>Transport turi <span className="text-red-500">*</span></label>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                    {transportOptions.map((item) => (
+                      <button
+                        key={item.type}
+                        type="button"
+                        onClick={() => setTransportType(item.type)}
+                        className={`flex flex-col items-center justify-center p-3 sm:p-4 border-2 rounded-xl sm:rounded-2xl transition-all min-h-[100px] sm:min-h-[120px] ${
+                          transportType === item.type 
+                            ? 'border-blue-700 bg-blue-700/10 shadow-md' 
+                            : 'border-gray-300 hover:border-blue-500 hover:shadow-sm'
+                        }`}
+                      >
+                        {item.icon}
+                        <span className="mt-2 text-xs sm:text-sm text-center">{item.type}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className='block mb-1 text-sm sm:text-base'>Yuk sig'imi (kg) <span className="text-red-500">*</span></label>
-                <input 
-                  value={volume}
-                  onChange={(e) => setVolume(e.target.value)}
-                  type="number" 
-                  min="0"
-                  className='w-full p-3 border-2 border-gray-300 outline-none rounded-xl transition-colors focus:border-blue-700 text-sm sm:text-base'
-                />
-              </div>
-              <div>
-                <label className='block mb-1 text-sm sm:text-base'>Mashina raqami</label>
-                <input 
-                  placeholder='01 A 123 AA' 
-                  className='w-full p-3 border-2 border-gray-300 outline-none rounded-xl transition-colors focus:border-blue-700 text-sm sm:text-base'
-                />
-              </div>
-            </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className='block mb-1 text-sm sm:text-base'>Yuk sig'imi (kg) <span className="text-red-500">*</span></label>
+                    <input 
+                      value={volume}
+                      onChange={(e) => setVolume(e.target.value)}
+                      type="number" 
+                      min="0"
+                      className='w-full p-3 border-2 border-gray-300 outline-none rounded-xl transition-colors focus:border-blue-700 text-sm sm:text-base'
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className='block mb-1 text-sm sm:text-base'>Mashina raqami</label>
+                    <input 
+                      placeholder='01 A 123 AA' 
+                      className='w-full p-3 border-2 border-gray-300 outline-none rounded-xl transition-colors focus:border-blue-700 text-sm sm:text-base'
+                    />
+                  </div>
+                </div>
+              </>
+            ) : (
+              // Shipper-specific fields
+              <>
+                <div className="text-center p-4 bg-blue-50 rounded-xl mb-4">
+                  <FaUserTie className="text-4xl text-blue-600 mx-auto mb-2" />
+                  <h3 className="text-lg font-medium text-blue-800">Yuk Jo'natuvchi Profili</h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Siz yuk jo'natuvchi sifatida ro'yxatdan o'tdingiz. Transport ma'lumotlari talab qilinmaydi.
+                  </p>
+                </div>
+                
+                <div>
+                  <label className='block mb-1 text-sm sm:text-base'>O'rtacha yuk hajmi (kg) (ixtiyoriy)</label>
+                  <input 
+                    value={volume}
+                    onChange={(e) => setVolume(e.target.value)}
+                    type="number" 
+                    min="0"
+                    placeholder="O'rtacha jo'natadigan yuk hajmingiz"
+                    className='w-full p-3 border-2 border-gray-300 outline-none rounded-xl transition-colors focus:border-blue-700 text-sm sm:text-base'
+                  />
+                </div>
+                
+                <div>
+                  <label className='block mb-1 text-sm sm:text-base'>Qo'shimcha izohlar (ixtiyoriy)</label>
+                  <textarea 
+                    placeholder="Yuk jo'natishga oid qo'shimcha ma'lumotlar..."
+                    rows="3"
+                    className='w-full p-3 border-2 border-gray-300 outline-none rounded-xl transition-colors focus:border-blue-700 text-sm sm:text-base'
+                  />
+                </div>
+              </>
+            )}
           </div>
         );
 
@@ -617,12 +732,22 @@ const ProfileSetup = () => {
         return (
           <div>
             <div className="bg-gray-100 p-4 sm:p-6 rounded-xl mb-6">
-              <h2 className='text-blue-700 text-lg sm:text-xl font-semibold mb-3 sm:mb-4'>Profil ma'lumotlari</h2>
+              <h2 className='text-blue-700 text-lg sm:text-xl font-semibold mb-3 sm:mb-4'>
+                {isDriver ? 'Haydovchi' : 'Yuk Jo\'natuvchi'} profil ma'lumotlari
+              </h2>
               <div className="space-y-2 text-sm sm:text-base">
                 <div className="flex flex-col sm:flex-row sm:items-center">
                   <span className="font-semibold sm:w-40 mb-1 sm:mb-0">Ism:</span>
                   <span>{firstName} {lastName}</span>
                 </div>
+                
+                {isShipper && companyName && (
+                  <div className="flex flex-col sm:flex-row sm:items-center">
+                    <span className="font-semibold sm:w-40 mb-1 sm:mb-0">Kompaniya:</span>
+                    <span className="break-all">{companyName}</span>
+                  </div>
+                )}
+                
                 <div className="flex flex-col sm:flex-row sm:items-center">
                   <span className="font-semibold sm:w-40 mb-1 sm:mb-0">Elektron pochta:</span>
                   <span className="break-all">{eAddress}</span>
@@ -631,17 +756,36 @@ const ProfileSetup = () => {
                   <span className="font-semibold sm:w-40 mb-1 sm:mb-0">Manzil:</span>
                   <span>{state}{district ? `, ${district}` : ''}{address ? `, ${address}` : ''}</span>
                 </div>
+                
+                {isDriver && (
+                  <>
+                    <div className="flex flex-col sm:flex-row sm:items-center">
+                      <span className="font-semibold sm:w-40 mb-1 sm:mb-0">Guvohnoma raqami:</span>
+                      <span>{document}</span>
+                    </div>
+                    <div className="flex flex-col sm:flex-row sm:items-center">
+                      <span className="font-semibold sm:w-40 mb-1 sm:mb-0">Transport turi:</span>
+                      <span>{transportType}</span>
+                    </div>
+                    <div className="flex flex-col sm:flex-row sm:items-center">
+                      <span className="font-semibold sm:w-40 mb-1 sm:mb-0">Sig'im:</span>
+                      <span>{volume} kg</span>
+                    </div>
+                  </>
+                )}
+                
+                {isShipper && volume && (
+                  <div className="flex flex-col sm:flex-row sm:items-center">
+                    <span className="font-semibold sm:w-40 mb-1 sm:mb-0">O'rtacha yuk hajmi:</span>
+                    <span>{volume} kg</span>
+                  </div>
+                )}
+                
                 <div className="flex flex-col sm:flex-row sm:items-center">
-                  <span className="font-semibold sm:w-40 mb-1 sm:mb-0">Guvohnoma raqami:</span>
-                  <span>{document}</span>
-                </div>
-                <div className="flex flex-col sm:flex-row sm:items-center">
-                  <span className="font-semibold sm:w-40 mb-1 sm:mb-0">Transport turi:</span>
-                  <span>{transportType}</span>
-                </div>
-                <div className="flex flex-col sm:flex-row sm:items-center">
-                  <span className="font-semibold sm:w-40 mb-1 sm:mb-0">Sig'im:</span>
-                  <span>{volume} kg</span>
+                  <span className="font-semibold sm:w-40 mb-1 sm:mb-0">Rol:</span>
+                  <span className={`px-2 py-1 rounded ${isDriver ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'}`}>
+                    {isDriver ? 'Haydovchi' : 'Yuk Jo\'natuvchi'}
+                  </span>
                 </div>
               </div>
             </div>
@@ -678,14 +822,6 @@ const ProfileSetup = () => {
         return null;
     }
   };
-
-  const stepTitles = ['Asosiy ma\'lumotlar', 'Kontakt ma\'lumotlari', 'Transport ma\'lumotlari', 'Ma\'lumotlarni tasdiqlash'];
-  const stepDescriptions = [
-    'Profilingizni to\'ldirish uchun quyidagi maydonlarni to\'ldiring.',
-    'Bog\'lanish uchun kontakt ma\'lumotlaringizni kiriting.',
-    'Yuk tashish uchun transport ma\'lumotlaringizni kiriting.',
-    'Kiritgan ma\'lumotlaringizni tekshiring va tasdiqlang.'
-  ];
 
   return (
     <div className='main-bg min-h-screen min-w-full py-4 sm:py-8 px-4'>
@@ -725,7 +861,7 @@ const ProfileSetup = () => {
           
           {/* Step Labels */}
           <div className="flex justify-around py-2 mb-4">
-            {['Asosiy', 'Kontakt', 'Transport', 'Tasdiqlash'].map((label, index) => (
+            {['Asosiy', 'Kontakt', isDriver ? 'Transport' : 'Qo\'shimcha', 'Tasdiqlash'].map((label, index) => (
               <p
                 key={label}
                 className={`text-xs sm:text-sm translate-x-1 ${counter === index ? 'text-blue-700 font-medium' : 'text-gray-500'}`}
