@@ -822,11 +822,11 @@ const Login = () => {
         </div>
       ))}
       
-      <div className='flex justify-center mx-5 rounded-xl bg-gradient-to-r from-blue-600 to-blue-800 cursor-pointer transition-all duration-300 transform hover:-translate-y-0.5 hover:shadow-lg hover:shadow-blue-500/30'>
-        <button onClick={() => setCounter(counter + 1)} className='flex items-center cursor-pointer gap-x-2 py-3 text-white'>
+      <label for="continue1" className='flex justify-center mx-5 rounded-xl bg-gradient-to-r from-blue-600 to-blue-800 cursor-pointer transition-all duration-300 transform hover:-translate-y-0.5 hover:shadow-lg hover:shadow-blue-500/30'>
+        <button id='continue1' onClick={() => setCounter(counter + 1)} className='flex items-center cursor-pointer gap-x-2 py-3 text-white'>
           <FaArrowRight className='inline transition-transform duration-300 group-hover:translate-x-1' />{t("continue")}
         </button>
-      </div>
+      </label>
       <p className='text-center py-4 text-zinc-600'>
         {t("haveAccount")} 
         <button type="button" onClick={() => {setCounter(2); setLogin(true);}} className='text-blue-700 cursor-pointer ml-1 font-medium hover:text-blue-800 transition-colors'>
@@ -890,12 +890,6 @@ const Login = () => {
           <div className='grid grid-cols-5 gap-2'>
             <div>
               <p className='sm:p-3 p-2 col-span-1 bg-gradient-to-r from-zinc-100 to-zinc-200 border border-zinc-300 rounded-xl shadow-sm flex items-center justify-center'>
-                <img 
-                  src={SMALL_FLAG_IMAGES[language]} 
-                  alt="flag" 
-                  className="w-4 h-3 mr-2 rounded-sm inline-block"
-                  style={{verticalAlign: 'middle'}}
-                />
                 +998
               </p>
             </div>

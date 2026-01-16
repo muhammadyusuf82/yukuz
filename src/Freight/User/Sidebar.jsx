@@ -5,10 +5,11 @@ import { FaStarHalfStroke, FaCirclePlus, FaCircleQuestion } from "react-icons/fa
 const Sidebar = ({ onPageChange, activePage }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [activeId, setActiveId] = useState(1);
-    const [user, setUser] = useState('')
+    const [user, setUser] = useState({});
+    const [photoUrl, setPhotoUrl] = useState('');
 
     // Ma'lumotlarni yuklash
-    const token = localStorage.getItem('token')
+    const token = localStorage.getItem('token');
 
     useEffect(() => {
         const loadData = async () => {
@@ -19,14 +20,24 @@ const Sidebar = ({ onPageChange, activePage }) => {
                         'Authorization': `Token ${token}`
                     }
                 })
-                const res = await promise.json()
-                setUser(res)
+                const res = await promise.json();
+                setUser(res);
+                
+                // Check if user has a photo and construct the full URL
+                if (res.photo) {
+                    // If the photo URL is relative, prepend the base URL
+                    let photoPath = res.photo;
+                    if (photoPath.startsWith('/')) {
+                        photoPath = `https://tokennoty.pythonanywhere.com${photoPath}`;
+                    }
+                    setPhotoUrl(photoPath);
+                }
             } catch (error) {
                 console.log(error);
             }
         }
-        loadData()
-    }, [])
+        loadData();
+    }, [token]);
 
     const handleLogout = () => {
         const confirmLogout = window.confirm("Rostdan ham tizimdan chiqmoqchimisiz?");
@@ -64,11 +75,34 @@ const Sidebar = ({ onPageChange, activePage }) => {
                 <div className="sticky flex flex-col h-full py-8 px-5 overflow-y-auto">
 
                     <div className="flex flex-col items-center mb-6">
-                        <div className="w-20 h-20 rounded-full border-4 border-white shadow-lg bg-linear-to-br from-[#4361ee] to-[#7209b7] flex items-center justify-center text-white text-3xl font-bold">
-                            {user?.first_name?.charAt(0)}{user?.last_name?.charAt(0)}
+                        <div className="w-20 h-20 rounded-full border-4 border-white shadow-lg overflow-hidden">
+                            {photoUrl ? (
+                                <img 
+                                    src={photoUrl} 
+                                    alt={`${user.first_name || ''} ${user.last_name || ''}`}
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                        // If image fails to load, show fallback
+                                        e.target.style.display = 'none';
+                                        e.target.parentElement.innerHTML = `
+                                            <div class="w-full h-full bg-gradient-to-br from-[#4361ee] to-[#7209b7] flex items-center justify-center text-white text-3xl font-bold">
+                                                ${user.first_name ? user.first_name[0] : 'U'}
+                                            </div>
+                                        `;
+                                    }}
+                                />
+                            ) : (
+                                <div className="w-full h-full bg-gradient-to-br from-[#4361ee] to-[#7209b7] flex items-center justify-center text-white text-3xl font-bold">
+                                    {user.first_name ? user.first_name[0] : 'U'}
+                                </div>
+                            )}
                         </div>
-                        <h3 className="text-xl font-bold mt-3 text-slate-800">{user.first_name} {user.last_name}</h3>
-                        <span className="text-xs font-bold text-[#4361ee] bg-blue-50 px-3 py-1 rounded-full uppercase mt-2">{user.role}</span>
+                        <h3 className="text-xl font-bold mt-3 text-slate-800">
+                            {user.first_name || 'Foydalanuvchi'} {user.last_name || ''}
+                        </h3>
+                        <span className="text-xs font-bold text-[#4361ee] bg-blue-50 px-3 py-1 rounded-full uppercase mt-2">
+                            {user.role === 'driver' ? 'Haydovchi' : user.role === 'shipper' ? 'Yuk Jo\'natuvchi' : 'Foydalanuvchi'}
+                        </span>
 
                         <div className="mt-4 flex flex-col items-center border-b border-gray-100 w-full pb-6">
                             <span className="text-gray-400 text-sm">Reyting</span>
@@ -86,9 +120,15 @@ const Sidebar = ({ onPageChange, activePage }) => {
                                 .map((item) => (
                                     <li
                                         key={item.id}
-                                        onClick={() => onPageChange(item.title)}
+                                        onClick={() => {
+                                            if (item.title === "Chiqish") {
+                                                handleLogout();
+                                            } else {
+                                                onPageChange(item.title);
+                                            }
+                                        }}
                                         className={`flex items-center gap-4 p-3 px-5 rounded-xl cursor-pointer transition-all
-                                    ${activePage === item.title ? "bg-linear-to-r from-[#4361ee] to-[#7209b7] text-white" : "text-slate-600"}`}>
+                                    ${activePage === item.title ? "bg-gradient-to-r from-[#4361ee] to-[#7209b7] text-white" : "text-slate-600"}`}>
                                         <item.icon size={20} />
                                         <span className="text-lg">{item.title}</span>
                                     </li>

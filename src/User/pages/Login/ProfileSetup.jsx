@@ -21,10 +21,10 @@ import { BsFillFuelPumpFill } from "react-icons/bs";
 const baseUrl = 'https://tokennoty.pythonanywhere.com/'
 
 // Custom Dropdown Component - Always shows above
-const CustomDropdown = ({ 
-  options, 
-  value, 
-  onChange, 
+const CustomDropdown = ({
+  options,
+  value,
+  onChange,
   placeholder = "Tanlang",
   disabled = false,
   label,
@@ -34,7 +34,7 @@ const CustomDropdown = ({
   const [search, setSearch] = useState('');
   const dropdownRef = useRef(null);
 
-  const filteredOptions = options.filter(option => 
+  const filteredOptions = options.filter(option =>
     option.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -62,18 +62,17 @@ const CustomDropdown = ({
           {label} {required && <span className="text-red-500">*</span>}
         </label>
       )}
-      
+
       <button
         type="button"
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
-        className={`w-full p-3 outline-none border-2 rounded-xl transition-colors flex justify-between items-center text-sm sm:text-base ${
-          disabled 
-            ? 'bg-gray-100 border-gray-300 text-gray-400 cursor-not-allowed' 
-            : isOpen 
-              ? 'border-blue-700 bg-white' 
-              : 'border-gray-300 hover:border-blue-500 focus:border-blue-700 bg-white'
-        }`}
+        className={`w-full p-3 outline-none border-2 rounded-xl transition-colors flex justify-between items-center text-sm sm:text-base cursor-pointer ${disabled
+          ? 'bg-gray-100 border-gray-300 text-gray-400 cursor-not-allowed'
+          : isOpen
+            ? 'border-blue-700 bg-white'
+            : 'border-gray-300 hover:border-blue-500 focus:border-blue-700 bg-white'
+          }`}
       >
         <span className={`${value ? 'text-gray-900' : 'text-gray-500'}`}>
           {value || placeholder}
@@ -86,7 +85,7 @@ const CustomDropdown = ({
       </button>
 
       {isOpen && !disabled && (
-        <div 
+        <div
           className="absolute z-50 w-full bottom-full mb-2 bg-white border border-gray-300 rounded-xl shadow-lg max-h-60 overflow-hidden"
         >
           <div className="p-2 border-b">
@@ -99,16 +98,15 @@ const CustomDropdown = ({
               onClick={(e) => e.stopPropagation()}
             />
           </div>
-          
+
           <div className="overflow-y-auto max-h-48">
             {filteredOptions.length > 0 ? (
               filteredOptions.map((option) => (
                 <div
                   key={option}
                   onClick={() => handleSelect(option)}
-                  className={`p-3 cursor-pointer hover:bg-blue-50 transition-colors text-sm sm:text-base ${
-                    value === option ? 'bg-blue-100 text-blue-700' : 'text-gray-900'
-                  }`}
+                  className={`p-3 cursor-pointer hover:bg-blue-50 transition-colors text-sm sm:text-base ${value === option ? 'bg-blue-100 text-blue-700' : 'text-gray-900'
+                    }`}
                 >
                   {option}
                 </div>
@@ -130,7 +128,7 @@ const ProfileSetup = () => {
   const role = localStorage.getItem('job'); // 'shipper' or 'driver'
   const isDriver = role === 'driver';
   const isShipper = role === 'shipper';
-  
+
   // States
   const [counter, setCounter] = useState(0);
   const [volume, setVolume] = useState('');
@@ -141,12 +139,40 @@ const ProfileSetup = () => {
   const [lastName, setLastName] = useState('');
   const [transportType, setTransportType] = useState('');
   const [address, setAddress] = useState('');
-  const [eAddress, setEAddress] = useState('');
+  const [email, setEmail] = useState('');
   const [image, setImage] = useState(null);
+  const [imageFile, setImageFile] = useState(null); // Store the actual file
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [companyName, setCompanyName] = useState('');
+
+  // Fetch current user data
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        const response = await fetch('https://tokennoty.pythonanywhere.com/api/users/', {
+          method: 'GET',
+          headers: { 'Authorization': `Token ${token}` }
+        });
+        
+        if (response.ok) {
+          const userData = await response.json();
+          // Assuming the user data has an 'email' field
+          if (userData.email) {
+            setEmail(userData.email);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+      }
+    };
+
+    fetchCurrentUser();
+  }, []);
 
   // Memoized values
   const progressWidth = useMemo(() => {
@@ -171,7 +197,7 @@ const ProfileSetup = () => {
       "Shahrixon tumani",
       "Oltinkoʻl tumani"
     ],
-  
+
     "Buxoro viloyati": [
       "Olot tumani",
       "Buxoro tumani",
@@ -185,7 +211,7 @@ const ProfileSetup = () => {
       "Romitan tumani",
       "Shofirkon tumani"
     ],
-  
+
     "Jizzax viloyati": [
       "Arnasoy tumani",
       "Baxmal tumani",
@@ -200,7 +226,7 @@ const ProfileSetup = () => {
       "Sharof Rashidov tumani",
       "Yangiobod tumani"
     ],
-  
+
     "Qashqadaryo viloyati": [
       "Gʻuzor tumani",
       "Dehqonobod tumani",
@@ -216,7 +242,7 @@ const ProfileSetup = () => {
       "Shahrisabz tumani",
       "Yakkabogʻ tumani"
     ],
-  
+
     "Navoiy viloyati": [
       "Konimex tumani",
       "Karmana tumani",
@@ -227,7 +253,7 @@ const ProfileSetup = () => {
       "Uchquduq tumani",
       "Xatirchi tumani"
     ],
-  
+
     "Namangan viloyati": [
       "Kosonsoy tumani",
       "Mingbuloq tumani",
@@ -241,7 +267,7 @@ const ProfileSetup = () => {
       "Chust tumani",
       "Yangiqoʻrgʻon tumani"
     ],
-  
+
     "Samarqand viloyati": [
       "Oqdaryo tumani",
       "Bulungʻur tumani",
@@ -258,7 +284,7 @@ const ProfileSetup = () => {
       "Toyloq tumani",
       "Urgut tumani"
     ],
-  
+
     "Surxondaryo viloyati": [
       "Oltinsoy tumani",
       "Angor tumani",
@@ -275,7 +301,7 @@ const ProfileSetup = () => {
       "Sherobod tumani",
       "Shoʻrchi tumani"
     ],
-  
+
     "Sirdaryo viloyati": [
       "Oqoltin tumani",
       "Boyovut tumani",
@@ -286,7 +312,7 @@ const ProfileSetup = () => {
       "Sayxunobod tumani",
       "Sirdaryo tumani"
     ],
-  
+
     "Toshkent viloyati": [
       "Oqqoʻrgʻon tumani",
       "Ohangaron tumani",
@@ -304,7 +330,7 @@ const ProfileSetup = () => {
       "Yuqori Chirchiq tumani",
       "Yangiyoʻl tumani"
     ],
-  
+
     "Fargʻona viloyati": [
       "Oltiariq tumani",
       "Bagʻdod tumani",
@@ -321,7 +347,7 @@ const ProfileSetup = () => {
       "Furqat tumani",
       "Yozyovon tumani"
     ],
-  
+
     "Xorazm viloyati": [
       "Bogʻot tumani",
       "Gurlan tumani",
@@ -334,7 +360,7 @@ const ProfileSetup = () => {
       "Yangiariq tumani",
       "Yangibozor tumani"
     ],
-  
+
     "Qoraqalpogʻiston Respublikasi": [
       "Amudaryo tumani",
       "Beruniy tumani",
@@ -352,7 +378,7 @@ const ProfileSetup = () => {
       "Shumanay tumani",
       "Ellikqalʼa tumani"
     ],
-  
+
     "Toshkent shahri": [
       "Olmazor tumani",
       "Bektemir tumani",
@@ -378,7 +404,7 @@ const ProfileSetup = () => {
 
   // Get region options from regions object keys
   const regionOptions = useMemo(() => Object.keys(regions), []);
-  
+
   // Get district options based on selected region
   const districtOptions = useMemo(() => {
     return state ? regions[state] || [] : [];
@@ -423,6 +449,7 @@ const ProfileSetup = () => {
     const file = e.target.files[0];
     if (file && file.type.startsWith('image/')) {
       setImage(URL.createObjectURL(file));
+      setImageFile(file); // Store the file object for upload
     } else {
       alert('Iltimos, faqat rasm faylini yuklang');
     }
@@ -436,43 +463,51 @@ const ProfileSetup = () => {
     try {
       const token = localStorage.getItem('token');
       const fullAddress = `${state}${district ? `, ${district}` : ''}${address ? `, ${address}` : ''}`;
+
+      // Create FormData for file upload
+      const formData = new FormData();
       
-      // Prepare data based on role
-      const userData = {
-        first_name: firstName,
-        last_name: lastName,
-        address: fullAddress,
-        role: role
-      };
+      // Append text fields
+      formData.append('first_name', firstName);
+      formData.append('last_name', lastName);
+      formData.append('address', fullAddress);
+      formData.append('role', role);
 
       // Add driver-specific fields if driver
       if (isDriver) {
-        userData.driver_license = document;
-        userData.transport_type = transportType;
-        userData.transport_capacity = volume;
+        formData.append('driver_license', document);
+        formData.append('transport_type', transportType);
+        formData.append('transport_capacity', volume);
       } else {
         // Add shipper-specific fields if shipper
-        userData.company_name = companyName;
+        if (companyName) {
+          formData.append('company_name', companyName);
+        }
       }
-      
-      const response = await fetch(baseUrl+'api/users/', {
+
+      // Append photo if exists
+      if (imageFile) {
+        formData.append('photo', imageFile);
+      }
+
+      const response = await fetch(baseUrl + 'api/users/', {
         method: 'PATCH',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Token ${token}`
+          // Note: Don't set Content-Type for FormData, browser will set it automatically with boundary
         },
-        body: JSON.stringify(userData)
+        body: formData
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || `HTTP ${response.status}`);
+        throw new Error(errorData.message || errorData.detail || `HTTP ${response.status}`);
       }
 
       const data = await response.json();
       console.log('Success:', data);
       setSuccess(true);
-      
+
       // Redirect after success
       setTimeout(() => {
         window.location.href = '/freight/asosiy';
@@ -485,17 +520,17 @@ const ProfileSetup = () => {
     } finally {
       setLoading(false);
     }
-  }, [firstName, lastName, state, district, address, document, transportType, volume, companyName, role, isDriver]);
+  }, [firstName, lastName, state, district, address, document, transportType, volume, companyName, role, isDriver, imageFile]);
 
   const handleNext = useCallback(() => {
     // Define validations for each step
     const validations = [
       // Step 0: Basic info
       () => !firstName || !lastName ? 'Ism va familiya talab qilinadi' : null,
-      
+
       // Step 1: Contact info
       () => !state || !address ? 'Shahar va asosiy manzil talab qilinadi' : null,
-      
+
       // Step 2: Transport/Additional info
       () => {
         if (isDriver) {
@@ -505,7 +540,7 @@ const ProfileSetup = () => {
           return null;
         }
       },
-      
+
       // Step 3: Review (always valid)
       () => null
     ];
@@ -536,6 +571,16 @@ const ProfileSetup = () => {
     }
   }, []);
 
+  // Helper component for compact info items
+  const CompactInfoItem = ({ label, value }) => (
+    <div className="flex items-center justify-between py-1">
+      <span className="text-xs text-gray-500">{label}:</span>
+      <span className="text-sm font-medium text-gray-900 text-right truncate max-w-[150px]">
+        {value || <span className="text-gray-400">—</span>}
+      </span>
+    </div>
+  );
+
   // Step content renderer
   const renderStep = () => {
     switch (counter) {
@@ -556,38 +601,38 @@ const ProfileSetup = () => {
               <FaCamera />
               <span>Rasm yuklash</span>
             </label>
-            
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className='text-sm sm:text-base block mb-1'>Ism <span className="text-red-500">*</span></label>
-                <input 
+                <input
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
-                  placeholder='Ismingiz' 
+                  placeholder='Ismingiz'
                   className='border-2 outline-none focus:border-blue-700 px-3 border-gray-300 py-2 rounded-lg w-full transition-colors text-sm sm:text-base'
                   required
                 />
               </div>
               <div>
                 <label className='text-sm sm:text-base block mb-1'>Familiya <span className="text-red-500">*</span></label>
-                <input 
+                <input
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
-                  placeholder='Familiyangiz' 
+                  placeholder='Familiyangiz'
                   className='border-2 outline-none focus:border-blue-700 px-3 border-gray-300 py-2 rounded-lg w-full transition-colors text-sm sm:text-base'
                   required
                 />
               </div>
             </div>
-            
+
             {/* Company name for shipper */}
             {isShipper && (
               <div className="mt-4">
                 <label className='text-sm sm:text-base block mb-1'>Kompaniya nomi (ixtiyoriy)</label>
-                <input 
+                <input
                   value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
-                  placeholder='Kompaniya nomi' 
+                  placeholder='Kompaniya nomi'
                   className='border-2 outline-none focus:border-blue-700 px-3 border-gray-300 py-2 rounded-lg w-full transition-colors text-sm sm:text-base'
                 />
               </div>
@@ -600,10 +645,10 @@ const ProfileSetup = () => {
           <div className="space-y-4">
             <div>
               <label className='block mb-1 text-sm sm:text-base'>Asosiy manzil <span className="text-red-500">*</span></label>
-              <input 
+              <input
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
-                type="text" 
+                type="text"
                 className='w-full p-3 outline-none border-gray-300 border-2 rounded-xl transition-colors focus:border-blue-700 text-sm sm:text-base'
                 placeholder='Manzilingiz'
               />
@@ -641,15 +686,15 @@ const ProfileSetup = () => {
               <>
                 <div>
                   <label className='block mb-1 text-sm sm:text-base'>Haydovchilik guvohnomasi raqami <span className="text-red-500">*</span></label>
-                  <input 
+                  <input
                     value={document}
                     onChange={(e) => setDocument(e.target.value)}
-                    placeholder='AA 1234567' 
+                    placeholder='AA 1234567'
                     className='w-full p-3 border-2 border-gray-300 outline-none rounded-xl transition-colors focus:border-blue-700 text-sm sm:text-base'
                     required
                   />
                 </div>
-                
+
                 <div>
                   <label className='block mb-1 text-sm sm:text-base'>Transport turi <span className="text-red-500">*</span></label>
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
@@ -658,11 +703,10 @@ const ProfileSetup = () => {
                         key={item.type}
                         type="button"
                         onClick={() => setTransportType(item.type)}
-                        className={`flex flex-col items-center justify-center p-3 sm:p-4 border-2 rounded-xl sm:rounded-2xl transition-all min-h-[100px] sm:min-h-[120px] ${
-                          transportType === item.type 
-                            ? 'border-blue-700 bg-blue-700/10 shadow-md' 
-                            : 'border-gray-300 hover:border-blue-500 hover:shadow-sm'
-                        }`}
+                        className={`flex flex-col items-center justify-center p-3 sm:p-4 border-2 rounded-xl sm:rounded-2xl transition-all min-h-[100px] sm:min-h-[120px] cursor-pointer ${transportType === item.type
+                          ? 'border-blue-700 bg-blue-700/10 shadow-md'
+                          : 'border-gray-300 hover:border-blue-500 hover:shadow-sm'
+                          }`}
                       >
                         {item.icon}
                         <span className="mt-2 text-xs sm:text-sm text-center">{item.type}</span>
@@ -674,10 +718,10 @@ const ProfileSetup = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className='block mb-1 text-sm sm:text-base'>Yuk sig'imi (kg) <span className="text-red-500">*</span></label>
-                    <input 
+                    <input
                       value={volume}
                       onChange={(e) => setVolume(e.target.value)}
-                      type="number" 
+                      type="number"
                       min="0"
                       className='w-full p-3 border-2 border-gray-300 outline-none rounded-xl transition-colors focus:border-blue-700 text-sm sm:text-base'
                       required
@@ -685,8 +729,8 @@ const ProfileSetup = () => {
                   </div>
                   <div>
                     <label className='block mb-1 text-sm sm:text-base'>Mashina raqami</label>
-                    <input 
-                      placeholder='01 A 123 AA' 
+                    <input
+                      placeholder='01 A 123 AA'
                       className='w-full p-3 border-2 border-gray-300 outline-none rounded-xl transition-colors focus:border-blue-700 text-sm sm:text-base'
                     />
                   </div>
@@ -702,22 +746,22 @@ const ProfileSetup = () => {
                     Siz yuk jo'natuvchi sifatida ro'yxatdan o'tdingiz. Transport ma'lumotlari talab qilinmaydi.
                   </p>
                 </div>
-                
+
                 <div>
                   <label className='block mb-1 text-sm sm:text-base'>O'rtacha yuk hajmi (kg) (ixtiyoriy)</label>
-                  <input 
+                  <input
                     value={volume}
                     onChange={(e) => setVolume(e.target.value)}
-                    type="number" 
+                    type="number"
                     min="0"
                     placeholder="O'rtacha jo'natadigan yuk hajmingiz"
                     className='w-full p-3 border-2 border-gray-300 outline-none rounded-xl transition-colors focus:border-blue-700 text-sm sm:text-base'
                   />
                 </div>
-                
+
                 <div>
                   <label className='block mb-1 text-sm sm:text-base'>Qo'shimcha izohlar (ixtiyoriy)</label>
-                  <textarea 
+                  <textarea
                     placeholder="Yuk jo'natishga oid qo'shimcha ma'lumotlar..."
                     rows="3"
                     className='w-full p-3 border-2 border-gray-300 outline-none rounded-xl transition-colors focus:border-blue-700 text-sm sm:text-base'
@@ -730,90 +774,171 @@ const ProfileSetup = () => {
 
       case 3:
         return (
-          <div>
-            <div className="bg-gray-100 p-4 sm:p-6 rounded-xl mb-6">
-              <h2 className='text-blue-700 text-lg sm:text-xl font-semibold mb-3 sm:mb-4'>
-                {isDriver ? 'Haydovchi' : 'Yuk Jo\'natuvchi'} profil ma'lumotlari
-              </h2>
-              <div className="space-y-2 text-sm sm:text-base">
-                <div className="flex flex-col sm:flex-row sm:items-center">
-                  <span className="font-semibold sm:w-40 mb-1 sm:mb-0">Ism:</span>
-                  <span>{firstName} {lastName}</span>
+          <div className="animate-fadeIn">
+            {/* Header */}
+            <div className="mb-5 sm:mb-6">
+              <div className="flex items-center mb-4">
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center ${isDriver ? 'bg-blue-100' : 'bg-purple-100'}`}>
+                  {isDriver ? <FaTruck className="text-xl text-blue-600" /> : <FaUserTie className="text-xl text-purple-600" />}
                 </div>
-                
-                {isShipper && companyName && (
-                  <div className="flex flex-col sm:flex-row sm:items-center">
-                    <span className="font-semibold sm:w-40 mb-1 sm:mb-0">Kompaniya:</span>
-                    <span className="break-all">{companyName}</span>
-                  </div>
-                )}
-                
-                <div className="flex flex-col sm:flex-row sm:items-center">
-                  <span className="font-semibold sm:w-40 mb-1 sm:mb-0">Elektron pochta:</span>
-                  <span className="break-all">{eAddress}</span>
-                </div>
-                <div className="flex flex-col sm:flex-row sm:items-center">
-                  <span className="font-semibold sm:w-40 mb-1 sm:mb-0">Manzil:</span>
-                  <span>{state}{district ? `, ${district}` : ''}{address ? `, ${address}` : ''}</span>
-                </div>
-                
-                {isDriver && (
-                  <>
-                    <div className="flex flex-col sm:flex-row sm:items-center">
-                      <span className="font-semibold sm:w-40 mb-1 sm:mb-0">Guvohnoma raqami:</span>
-                      <span>{document}</span>
-                    </div>
-                    <div className="flex flex-col sm:flex-row sm:items-center">
-                      <span className="font-semibold sm:w-40 mb-1 sm:mb-0">Transport turi:</span>
-                      <span>{transportType}</span>
-                    </div>
-                    <div className="flex flex-col sm:flex-row sm:items-center">
-                      <span className="font-semibold sm:w-40 mb-1 sm:mb-0">Sig'im:</span>
-                      <span>{volume} kg</span>
-                    </div>
-                  </>
-                )}
-                
-                {isShipper && volume && (
-                  <div className="flex flex-col sm:flex-row sm:items-center">
-                    <span className="font-semibold sm:w-40 mb-1 sm:mb-0">O'rtacha yuk hajmi:</span>
-                    <span>{volume} kg</span>
-                  </div>
-                )}
-                
-                <div className="flex flex-col sm:flex-row sm:items-center">
-                  <span className="font-semibold sm:w-40 mb-1 sm:mb-0">Rol:</span>
-                  <span className={`px-2 py-1 rounded ${isDriver ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'}`}>
-                    {isDriver ? 'Haydovchi' : 'Yuk Jo\'natuvchi'}
-                  </span>
+                <div className="ml-4">
+                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Tasdiqlash</h2>
+                  <p className="text-sm text-gray-600">Ma'lumotlaringizni tekshiring</p>
                 </div>
               </div>
             </div>
-            
+
+            {/* Success/Error Messages */}
             {success && (
-              <div className="mb-4 p-3 sm:p-4 bg-green-50 border border-green-200 rounded-xl">
-                <div className="flex items-center text-green-700">
-                  <FaCheck className="mr-2 shrink-0" />
-                  <span className="text-sm sm:text-base">Ma'lumotlar muvaffaqiyatli saqlandi! Qayta yo'naltirilmoqda...</span>
-                </div>
-              </div>
-            )}
-            
-            {error && (
-              <div className="mb-4 p-3 sm:p-4 bg-red-50 border border-red-200 rounded-xl">
-                <div className="flex items-center text-red-700">
-                  <FaTimes className="mr-2 shrink-0" />
-                  <span className="text-sm sm:text-base">{error}</span>
+              <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-xl">
+                <div className="flex items-center">
+                  <FaCheck className="text-green-600 mr-2" />
+                  <span className="text-sm text-green-700">Muvaffaqiyatli saqlandi! Yo'naltirilmoqda...</span>
                 </div>
               </div>
             )}
 
-            <div className='flex items-start gap-x-2 text-xs sm:text-sm mb-6'>
-              <input type="checkbox" id="terms" className='mt-1 shrink-0' required />
-              <label htmlFor="terms" className="cursor-pointer leading-tight">
-                Men <a href="#" className='underline text-blue-700'>Foydalanish shartlari</a> va 
-                <a href="#" className='underline text-blue-700 ml-1'>Maxfiylik siyosati</a> ga roziman
-              </label>
+            {error && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl">
+                <div className="flex items-center">
+                  <FaTimes className="text-red-600 mr-2" />
+                  <span className="text-sm text-red-700">{error}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Profile Information - Compact Design */}
+            <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden mb-6">
+              {/* Profile Header - Improved layout for email */}
+              <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
+                <div className="mb-2">
+                  <h3 className="font-semibold text-gray-900 text-lg">{firstName}</h3>
+                  <h3 className="font-semibold text-gray-900 text-lg">{lastName}</h3>
+                </div>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center">
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${isDriver ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'}`}>
+                      {isDriver ? '🚚 Haydovchi' : '📦 Yuk Jo\'natuvchi'}
+                    </span>
+                    {companyName && (
+                      <span className="ml-2 text-xs text-gray-600 truncate max-w-[120px] sm:max-w-[180px]">
+                        <FaBuilding className="inline mr-1" /> {companyName}
+                      </span>
+                    )}
+                  </div>
+                  {email && (
+                    <div className="text-right min-w-0">
+                      <div className="text-xs text-gray-500">Email</div>
+                      <div className="text-sm text-blue-600 break-all max-w-full">
+                        {email}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Info Grid - More Compact */}
+              <div className="px-4 py-3">
+                <div className="space-y-3">
+                  {/* Personal Info */}
+                  <div>
+                    <h4 className="text-xs font-medium text-gray-500 uppercase mb-2">Shaxsiy ma'lumotlar</h4>
+                    <div className="space-y-1">
+                      <CompactInfoItem label="Ism" value={firstName} />
+                      <CompactInfoItem label="Familiya" value={lastName} />
+                    </div>
+                  </div>
+
+                  {/* Location Info */}
+                  <div>
+                    <h4 className="text-xs font-medium text-gray-500 uppercase mb-2">Manzil</h4>
+                    <div className="space-y-1">
+                      {state && <CompactInfoItem label="Viloyat" value={state} />}
+                      {district && <CompactInfoItem label="Tuman" value={district} />}
+                      {address && <CompactInfoItem label="Aniq manzil" value={address} />}
+                    </div>
+                  </div>
+
+                  {/* Role Specific Info */}
+                  <div>
+                    <h4 className="text-xs font-medium text-gray-500 uppercase mb-2">
+                      {isDriver ? 'Transport' : 'Qo\'shimcha ma\'lumotlar'}
+                    </h4>
+                    <div className="space-y-1">
+                      {isDriver ? (
+                        <>
+                          {document && <CompactInfoItem label="Guvohnoma raqami" value={document} />}
+                          {transportType && <CompactInfoItem label="Transport turi" value={transportType} />}
+                          {volume && <CompactInfoItem label="Yuk sig'imi" value={`${volume} kg`} />}
+                        </>
+                      ) : (
+                        <>
+                          {companyName && <CompactInfoItem label="Kompaniya" value={companyName} />}
+                          {volume && <CompactInfoItem label="O'rtacha yuk hajmi" value={`${volume} kg`} />}
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Progress Indicator - More Compact */}
+            <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-xl">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-sm font-medium text-gray-700">Profil to'liqligi</span>
+                <span className="text-sm font-bold text-blue-600">
+                  {(() => {
+                    const requiredFields = isDriver
+                      ? [firstName, lastName, address, state, document, transportType, volume]
+                      : [firstName, lastName, address, state];
+                    const filledFields = requiredFields.filter(Boolean).length;
+                    return `${Math.round((filledFields / requiredFields.length) * 100)}%`;
+                  })()}
+                </span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-1.5">
+                <div
+                  className="bg-gradient-to-r from-blue-500 to-blue-600 h-1.5 rounded-full"
+                  style={{
+                    width: (() => {
+                      const requiredFields = isDriver
+                        ? [firstName, lastName, address, state, document, transportType, volume]
+                        : [firstName, lastName, address, state];
+                      const filledFields = requiredFields.filter(Boolean).length;
+                      return `${(filledFields / requiredFields.length) * 100}%`;
+                    })()
+                  }}
+                ></div>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                {isDriver ? 'Barcha maydonlar to\'ldirilgan' : 'Asosiy maydonlar to\'ldirilgan'}
+              </p>
+            </div>
+
+            {/* Terms and Conditions - More Compact */}
+            <div className="mb-5">
+              <div className="flex items-start space-x-3">
+                <input
+                  type="checkbox"
+                  id="terms"
+                  className="mt-1 w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                  required
+                />
+                <label htmlFor="terms" className="text-sm text-gray-700 cursor-pointer">
+                  <span className="font-medium">Foydalanish shartlari va Maxfiylik siyosatiga roziman</span>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Ma'lumotlarim faqat yuk tashish maqsadida ishlatiladi
+                  </p>
+                </label>
+              </div>
+            </div>
+
+            {/* Quick Note */}
+            <div className="p-3 bg-blue-50 border border-blue-100 rounded-lg">
+              <p className="text-xs text-blue-700">
+                <span className="font-medium">Eslatma:</span> Profilni keyinroq sozlamalardan tahrirlashingiz mumkin
+              </p>
             </div>
           </div>
         );
@@ -829,12 +954,12 @@ const ProfileSetup = () => {
         {/* Header Section */}
         <div className="rounded-t-2xl main-bg text-center py-6 sm:py-8 px-4 sm:px-7 text-white w-full sm:w-5/6 lg:w-2/3 xl:w-1/2 mx-auto shadow-md">
           <div className="flex items-center justify-center mb-4 sm:mb-6">
-            <div className='p-2 mx-2 bg-white/20 rounded-2xl'>
+            <div className='p-2 mx-2 bg-white/20 rounded-2xl cursor-default'>
               <FaTruckLoading className='text-xl sm:text-2xl' />
             </div>
-            <h1 className='text-2xl sm:text-3xl font-medium'>Yuk.uz</h1>
+            <h1 className='text-2xl sm:text-3xl font-medium cursor-default'>Yuk.uz</h1>
           </div>
-          
+
           <div className="w-full bg-white/10 h-2 my-4 sm:my-6 rounded-2xl overflow-hidden">
             <div className={`h-full bg-white rounded-2xl transition-all duration-300 ${progressWidth}`}></div>
           </div>
@@ -848,23 +973,22 @@ const ProfileSetup = () => {
             {[0, 1, 2, 3].map((step) => (
               <div
                 key={step}
-                className={`rounded-full w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center text-sm sm:text-lg z-10 transition-all duration-300 ${
-                  counter > step ? 'bg-green-500 text-white' :
+                className={`rounded-full w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center text-sm sm:text-lg z-10 transition-all duration-300 cursor-default ${counter > step ? 'bg-green-500 text-white' :
                   counter === step ? 'bg-blue-700 text-white' :
-                  'border-2 border-gray-300 bg-white text-gray-500'
-                }`}
+                    'border-2 border-gray-300 bg-white text-gray-500'
+                  }`}
               >
                 {counter > step ? <GiCheckMark /> : step + 1}
               </div>
             ))}
           </div>
-          
+
           {/* Step Labels */}
           <div className="flex justify-around py-2 mb-4">
             {['Asosiy', 'Kontakt', isDriver ? 'Transport' : 'Qo\'shimcha', 'Tasdiqlash'].map((label, index) => (
               <p
                 key={label}
-                className={`text-xs sm:text-sm translate-x-1 ${counter === index ? 'text-blue-700 font-medium' : 'text-gray-500'}`}
+                className={`text-xs sm:text-sm translate-x-1 cursor-default ${counter === index ? 'text-blue-700 font-medium' : 'text-gray-500'}`}
               >
                 {label}
               </p>
@@ -873,10 +997,10 @@ const ProfileSetup = () => {
 
           {/* Step Title & Description */}
           <div className="mb-6 sm:mb-8">
-            <h2 className="text-xl sm:text-2xl font-medium text-gray-900 mb-2">
+            <h2 className="text-xl sm:text-2xl font-medium text-gray-900 mb-2 cursor-default">
               {stepTitles[counter]}
             </h2>
-            <p className="text-gray-600 text-sm sm:text-base">
+            <p className="text-gray-600 text-sm sm:text-base cursor-default">
               {stepDescriptions[counter]}
             </p>
           </div>
@@ -892,11 +1016,10 @@ const ProfileSetup = () => {
               <button
                 type="button"
                 onClick={handlePrev}
-                className={`flex items-center gap-x-2 px-4 sm:px-6 py-2 sm:py-3 rounded-xl text-sm sm:text-base font-medium transition-all ${
-                  counter === 0 
-                    ? 'border-2 border-gray-400 text-gray-400 cursor-not-allowed' 
-                    : 'border-2 border-gray-700 text-gray-700 hover:bg-gray-50'
-                }`}
+                className={`flex items-center gap-x-2 px-4 sm:px-6 py-2 sm:py-3 rounded-xl text-sm sm:text-base font-medium transition-all ${counter === 0
+                  ? 'border-2 border-gray-400 text-gray-400 cursor-not-allowed'
+                  : 'border-2 border-gray-700 text-gray-700 hover:bg-gray-50 cursor-pointer'
+                  }`}
               >
                 <FaArrowLeft /> Orqaga
               </button>
@@ -905,7 +1028,7 @@ const ProfileSetup = () => {
                 <button
                   type="button"
                   onClick={handleNext}
-                  className="bg-blue-700 hover:bg-blue-800 text-white flex items-center gap-x-2 px-4 sm:px-6 py-2 sm:py-3 rounded-xl font-medium text-sm sm:text-base hover:-translate-y-1 hover:shadow-xl transition-all duration-300"
+                  className="bg-blue-700 hover:bg-blue-800 text-white flex items-center gap-x-2 px-4 sm:px-6 py-2 sm:py-3 rounded-xl font-medium text-sm sm:text-base hover:-translate-y-1 hover:shadow-xl transition-all duration-300 cursor-pointer"
                 >
                   Keyingi <FaArrowRight />
                 </button>
@@ -913,7 +1036,7 @@ const ProfileSetup = () => {
                 <button
                   type="submit"
                   disabled={loading || success}
-                  className="bg-blue-700 hover:bg-blue-800 text-white flex items-center gap-x-2 px-4 sm:px-6 py-2 sm:py-3 rounded-xl font-medium text-sm sm:text-base hover:-translate-y-1 hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                  className="bg-blue-700 hover:bg-blue-800 text-white flex items-center gap-x-2 px-4 sm:px-6 py-2 sm:py-3 rounded-xl font-medium text-sm sm:text-base hover:-translate-y-1 hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none cursor-pointer"
                 >
                   {loading ? (
                     <>
