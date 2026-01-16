@@ -110,12 +110,14 @@ const CustomDropdown = ({ options, value, onChange, placeholder = "Tanlang", lab
   );
 };
 
-// Editable Field Component
+// Editable Field Component - FIXED VERSION
 const EditableField = ({ 
   label, 
   value, 
   field, 
   editingField, 
+  tempValue, // Added tempValue prop
+  onTempChange, // Added temp change handler
   onStartEdit, 
   onSave, 
   onCancel, 
@@ -124,6 +126,11 @@ const EditableField = ({
   icon: Icon = null,
   textarea = false
 }) => {
+  // Handle input change for the field being edited
+  const handleChange = (e) => {
+    onTempChange(field, e.target.value);
+  };
+
   return (
     <div className="space-y-1">
       <label className="text-xs font-bold text-slate-500 ml-1 flex items-center gap-1">
@@ -135,8 +142,8 @@ const EditableField = ({
         <div className="flex gap-2">
           {textarea ? (
             <textarea
-              value={value}
-              onChange={(e) => onStartEdit(field, e.target.value)}
+              value={tempValue || ''}
+              onChange={handleChange}
               className="w-full p-3 bg-slate-50 rounded-xl border border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm min-h-[80px] resize-y"
               placeholder={placeholder}
               autoFocus
@@ -144,8 +151,8 @@ const EditableField = ({
           ) : (
             <input
               type={type}
-              value={value}
-              onChange={(e) => onStartEdit(field, e.target.value)}
+              value={tempValue || ''}
+              onChange={handleChange}
               className="w-full p-3 bg-slate-50 rounded-xl border border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
               placeholder={placeholder}
               autoFocus
@@ -153,7 +160,7 @@ const EditableField = ({
           )}
           <div className="flex gap-1">
             <button
-              onClick={onSave}
+              onClick={() => onSave(field)}
               className="p-3 bg-green-500 text-white rounded-xl hover:bg-green-600 transition-colors"
             >
               <FaSave className="text-sm" />
@@ -271,13 +278,13 @@ const Settings = () => {
   });
 
   const [editingField, setEditingField] = useState(null);
-  const [tempValue, setTempValue] = useState('');
+  const [tempValues, setTempValues] = useState({}); // Changed to object to store multiple temp values
   const [loading, setLoading] = useState(true);
   const [imageFile, setImageFile] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [districts, setDistricts] = useState([]);
   const [notification, setNotification] = useState({ type: '', message: '' });
-  const [user, setUser] = useState()
+  const [user, setUser] = useState(null);
 
   // Fetch user data from API using GET
   useEffect(() => {
@@ -300,7 +307,8 @@ const Settings = () => {
         
         if (response.ok) {
           const data = await response.json();
-          setUser(data)
+          setUser(data);
+          
           // Parse address
           let state = '';
           let district = '';
@@ -364,7 +372,7 @@ const Settings = () => {
     const file = e.target.files[0];
     if (file && file.type.startsWith('image/')) {
       const imageUrl = URL.createObjectURL(file);
-      setUserData({...userData, photo: imageUrl});
+      setUserData(prev => ({ ...prev, photo: imageUrl }));
       setImageFile(file);
       setNotification({ type: 'success', message: 'Rasm yuklandi. Saqlash tugmasini bosing.' });
     }
@@ -372,18 +380,25 @@ const Settings = () => {
 
   const startEditing = (field, value) => {
     setEditingField(field);
-    setTempValue(value || '');
+    setTempValues(prev => ({ ...prev, [field]: value || '' }));
+  };
+
+  const handleTempChange = (field, value) => {
+    setTempValues(prev => ({ ...prev, [field]: value }));
   };
 
   const cancelEdit = () => {
     setEditingField(null);
-    setTempValue('');
+    setTempValues({});
   };
 
   const saveField = async (field) => {
     try {
       setIsSaving(true);
       const token = localStorage.getItem('token');
+      
+      // Get the value to save
+      const valueToSave = tempValues[field] || '';
       
       // Prepare data for PATCH
       const patchData = {};
@@ -406,45 +421,72 @@ const Settings = () => {
       
       // Handle address fields
       if (field === 'state' || field === 'district' || field === 'address') {
-        const newState = field === 'state' ? tempValue : userData.state;
-        const newDistrict = field === 'district' ? tempValue : userData.district;
-        const newAddress = field === 'address' ? tempValue : userData.address;
+        const newState = field === 'state' ? valueToSave : userData.state;
+        const newDistrict = field === 'district' ? valueToSave : userData.district;
+        const newAddress = field === 'address' ? valueToSave : userData.address;
         patchData['address'] = `${newState}${newDistrict ? `, ${newDistrict}` : ''}${newAddress ? `, ${newAddress}` : ''}`;
         
-        // Also update local state
+        // Update local state after successful save
         const updatedData = { ...userData };
-        if (field === 'state') updatedData.state = tempValue;
-        if (field === 'district') updatedData.district = tempValue;
-        if (field === 'address') updatedData.address = tempValue;
-        setUserData(updatedData);
-      } else {
-        patchData[apiField] = tempValue;
+        if (field === 'state') updatedData.state = valueToSave;
+        if (field === 'district') updatedData.district = valueToSave;
+        if (field === 'address') updatedData.address = valueToSave;
         
-        // Update local state
-        setUserData(prev => ({ ...prev, [field]: tempValue }));
-      }
+        patchData['role'] = updatedData.role; // Include role
 
-      const response = await fetch('https://tokennoty.pythonanywhere.com/api/users/', {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Token ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(patchData)
-      });
-
-      if (response.ok) {
-        setEditingField(null);
-        setNotification({ type: 'success', message: 'Ma\'lumot yangilandi!' });
-        
-        // Save to localStorage for persistence
-        localStorage.setItem('profileData', JSON.stringify(userData));
-      } else {
-        const errorData = await response.json();
-        setNotification({ 
-          type: 'error', 
-          message: 'Yangilashda xatolik: ' + (errorData.message || errorData.detail || 'Noma\'lum xato')
+        const response = await fetch('https://tokennoty.pythonanywhere.com/api/users/', {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Token ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(patchData)
         });
+
+        if (response.ok) {
+          setUserData(updatedData);
+          setEditingField(null);
+          setTempValues({});
+          setNotification({ type: 'success', message: 'Ma\'lumot yangilandi!' });
+          
+          // Save to localStorage for persistence
+          localStorage.setItem('profileData', JSON.stringify(updatedData));
+        } else {
+          const errorData = await response.json();
+          setNotification({ 
+            type: 'error', 
+            message: 'Yangilashda xatolik: ' + (errorData.message || errorData.detail || 'Noma\'lum xato')
+          });
+        }
+      } else {
+        patchData[apiField] = valueToSave;
+        patchData['role'] = userData.role; // Include role
+
+        const response = await fetch('https://tokennoty.pythonanywhere.com/api/users/', {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Token ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(patchData)
+        });
+
+        if (response.ok) {
+          // Update local state
+          setUserData(prev => ({ ...prev, [field]: valueToSave }));
+          setEditingField(null);
+          setTempValues({});
+          setNotification({ type: 'success', message: 'Ma\'lumot yangilandi!' });
+          
+          // Save to localStorage for persistence
+          localStorage.setItem('profileData', JSON.stringify({ ...userData, [field]: valueToSave }));
+        } else {
+          const errorData = await response.json();
+          setNotification({ 
+            type: 'error', 
+            message: 'Yangilashda xatolik: ' + (errorData.message || errorData.detail || 'Noma\'lum xato')
+          });
+        }
       }
     } catch (error) {
       console.error('Save error:', error);
@@ -455,68 +497,68 @@ const Settings = () => {
   };
 
   const handleSaveAll = async () => {
-  try {
-    setIsSaving(true);
-    const token = localStorage.getItem('token');
-    
-    // Prepare FormData for PATCH
-    const formData = new FormData();
-    
-    // Append all text fields
-    formData.append('first_name', userData.firstName);
-    formData.append('last_name', userData.lastName);
-    formData.append('address', `${userData.state}${userData.district ? `, ${userData.district}` : ''}${userData.address ? `, ${userData.address}` : ''}`);
-    formData.append('role', userData.role); // Added role field
-    
-    if (userData.companyName) formData.append('company_name', userData.companyName);
-    if (userData.driverLicense) formData.append('driver_license', userData.driverLicense);
-    if (userData.transportType) formData.append('transport_type', userData.transportType);
-    if (userData.transportCapacity) formData.append('transport_capacity', userData.transportCapacity);
-    if (userData.phone) formData.append('phone', userData.phone);
-    if (userData.facebook) formData.append('facebook', userData.facebook);
-    if (userData.whatsapp) formData.append('whatsapp', userData.whatsapp);
-    if (userData.carNumber) formData.append('car_number', userData.carNumber);
-    if (userData.averageShipmentVolume) formData.append('average_shipment_volume', userData.averageShipmentVolume);
-    if (userData.notes) formData.append('notes', userData.notes);
-    
-    // Append photo if exists
-    if (imageFile) {
-      formData.append('photo', imageFile);
-    }
-
-    const response = await fetch('https://tokennoty.pythonanywhere.com/api/users/', {
-      method: 'PATCH',
-      headers: {
-        'Authorization': `Token ${token}`
-      },
-      body: formData
-    });
-
-    if (response.ok) {
-      const result = await response.json();
-      setNotification({ type: 'success', message: 'Barcha ma\'lumotlar muvaffaqiyatli saqlandi!' });
+    try {
+      setIsSaving(true);
+      const token = localStorage.getItem('token');
       
-      // Save to localStorage
-      localStorage.setItem('profileData', JSON.stringify(userData));
+      // Prepare FormData for PATCH
+      const formData = new FormData();
       
-      // Update photo if returned
-      if (result.photo) {
-        setUserData(prev => ({ ...prev, photo: result.photo }));
+      // Append all text fields
+      formData.append('first_name', userData.firstName);
+      formData.append('last_name', userData.lastName);
+      formData.append('address', `${userData.state}${userData.district ? `, ${userData.district}` : ''}${userData.address ? `, ${userData.address}` : ''}`);
+      formData.append('role', userData.role);
+      
+      if (userData.companyName) formData.append('company_name', userData.companyName);
+      if (userData.driverLicense) formData.append('driver_license', userData.driverLicense);
+      if (userData.transportType) formData.append('transport_type', userData.transportType);
+      if (userData.transportCapacity) formData.append('transport_capacity', userData.transportCapacity);
+      if (userData.phone) formData.append('phone', userData.phone);
+      if (userData.facebook) formData.append('facebook', userData.facebook);
+      if (userData.whatsapp) formData.append('whatsapp', userData.whatsapp);
+      if (userData.carNumber) formData.append('car_number', userData.carNumber);
+      if (userData.averageShipmentVolume) formData.append('average_shipment_volume', userData.averageShipmentVolume);
+      if (userData.notes) formData.append('notes', userData.notes);
+      
+      // Append photo if exists
+      if (imageFile) {
+        formData.append('photo', imageFile);
       }
-    } else {
-      const errorData = await response.json();
-      setNotification({ 
-        type: 'error', 
-        message: 'Saqlashda xatolik: ' + (errorData.message || errorData.detail || 'Noma\'lum xato')
+
+      const response = await fetch('https://tokennoty.pythonanywhere.com/api/users/', {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Token ${token}`
+        },
+        body: formData
       });
+
+      if (response.ok) {
+        const result = await response.json();
+        setNotification({ type: 'success', message: 'Barcha ma\'lumotlar muvaffaqiyatli saqlandi!' });
+        
+        // Save to localStorage
+        localStorage.setItem('profileData', JSON.stringify(userData));
+        
+        // Update photo if returned
+        if (result.photo) {
+          setUserData(prev => ({ ...prev, photo: result.photo }));
+        }
+      } else {
+        const errorData = await response.json();
+        setNotification({ 
+          type: 'error', 
+          message: 'Saqlashda xatolik: ' + (errorData.message || errorData.detail || 'Noma\'lum xato')
+        });
+      }
+    } catch (error) {
+      console.error('Save all error:', error);
+      setNotification({ type: 'error', message: 'Saqlashda xatolik yuz berdi' });
+    } finally {
+      setIsSaving(false);
     }
-  } catch (error) {
-    console.error('Save all error:', error);
-    setNotification({ type: 'error', message: 'Saqlashda xatolik yuz berdi' });
-  } finally {
-    setIsSaving(false);
-  }
-};
+  };
 
   const handleStateChange = (state) => {
     setUserData(prev => ({ ...prev, state, district: '' }));
@@ -524,6 +566,10 @@ const Settings = () => {
 
   const handleTransportTypeChange = (type) => {
     setUserData(prev => ({ ...prev, transportType: type }));
+  };
+
+  const handleDistrictChange = (district) => {
+    setUserData(prev => ({ ...prev, district }));
   };
 
   if (loading) {
@@ -535,8 +581,6 @@ const Settings = () => {
       </div>
     );
   }
-//   console.log(token);
-  
 
   return (
     <div className="bg-white rounded-4xl p-6 md:p-8 border border-slate-100 shadow-sm">
@@ -595,8 +639,10 @@ const Settings = () => {
               value={userData.firstName}
               field="firstName"
               editingField={editingField}
+              tempValue={tempValues.firstName}
+              onTempChange={handleTempChange}
               onStartEdit={startEditing}
-              onSave={() => saveField('firstName')}
+              onSave={saveField}
               onCancel={cancelEdit}
               placeholder="Ismingiz"
             />
@@ -606,8 +652,10 @@ const Settings = () => {
               value={userData.lastName}
               field="lastName"
               editingField={editingField}
+              tempValue={tempValues.lastName}
+              onTempChange={handleTempChange}
               onStartEdit={startEditing}
-              onSave={() => saveField('lastName')}
+              onSave={saveField}
               onCancel={cancelEdit}
               placeholder="Familiyangiz"
             />
@@ -617,8 +665,10 @@ const Settings = () => {
               value={userData.phone}
               field="phone"
               editingField={editingField}
+              tempValue={tempValues.phone}
+              onTempChange={handleTempChange}
               onStartEdit={startEditing}
-              onSave={() => saveField('phone')}
+              onSave={saveField}
               onCancel={cancelEdit}
               type="tel"
               placeholder="+998 99 123 45 67"
@@ -633,8 +683,10 @@ const Settings = () => {
               value={userData.facebook}
               field="facebook"
               editingField={editingField}
+              tempValue={tempValues.facebook}
+              onTempChange={handleTempChange}
               onStartEdit={startEditing}
-              onSave={() => saveField('facebook')}
+              onSave={saveField}
               onCancel={cancelEdit}
               placeholder="Facebook profil linki"
               icon={FaFacebook}
@@ -645,8 +697,10 @@ const Settings = () => {
               value={userData.whatsapp}
               field="whatsapp"
               editingField={editingField}
+              tempValue={tempValues.whatsapp}
+              onTempChange={handleTempChange}
               onStartEdit={startEditing}
-              onSave={() => saveField('whatsapp')}
+              onSave={saveField}
               onCancel={cancelEdit}
               type="tel"
               placeholder="WhatsApp raqami"
@@ -693,7 +747,7 @@ const Settings = () => {
                 <CustomDropdown
                   options={districts}
                   value={userData.district}
-                  onChange={(district) => setUserData(prev => ({ ...prev, district }))}
+                  onChange={handleDistrictChange}
                   placeholder={userData.state ? "Tuman tanlang" : "Avval viloyatni tanlang"}
                 />
               </div>
@@ -704,8 +758,10 @@ const Settings = () => {
                   value={userData.address}
                   field="address"
                   editingField={editingField}
+                  tempValue={tempValues.address}
+                  onTempChange={handleTempChange}
                   onStartEdit={startEditing}
-                  onSave={() => saveField('address')}
+                  onSave={saveField}
                   onCancel={cancelEdit}
                   placeholder="Ko'cha, uy raqami"
                   textarea={true}
@@ -723,8 +779,10 @@ const Settings = () => {
                   value={userData.driverLicense}
                   field="driverLicense"
                   editingField={editingField}
+                  tempValue={tempValues.driverLicense}
+                  onTempChange={handleTempChange}
                   onStartEdit={startEditing}
-                  onSave={() => saveField('driverLicense')}
+                  onSave={saveField}
                   onCancel={cancelEdit}
                   placeholder="AA 1234567"
                   icon={FaIdCard}
@@ -741,8 +799,10 @@ const Settings = () => {
                     value={userData.transportCapacity}
                     field="transportCapacity"
                     editingField={editingField}
+                    tempValue={tempValues.transportCapacity}
+                    onTempChange={handleTempChange}
                     onStartEdit={startEditing}
-                    onSave={() => saveField('transportCapacity')}
+                    onSave={saveField}
                     onCancel={cancelEdit}
                     type="number"
                     placeholder="5000"
@@ -754,8 +814,10 @@ const Settings = () => {
                     value={userData.carNumber}
                     field="carNumber"
                     editingField={editingField}
+                    tempValue={tempValues.carNumber}
+                    onTempChange={handleTempChange}
                     onStartEdit={startEditing}
-                    onSave={() => saveField('carNumber')}
+                    onSave={saveField}
                     onCancel={cancelEdit}
                     placeholder="01 A 123 AA"
                     icon={FaCar}
@@ -771,8 +833,10 @@ const Settings = () => {
                   value={userData.companyName}
                   field="companyName"
                   editingField={editingField}
+                  tempValue={tempValues.companyName}
+                  onTempChange={handleTempChange}
                   onStartEdit={startEditing}
-                  onSave={() => saveField('companyName')}
+                  onSave={saveField}
                   onCancel={cancelEdit}
                   placeholder="Kompaniya nomi"
                 />
@@ -782,8 +846,10 @@ const Settings = () => {
                   value={userData.averageShipmentVolume}
                   field="averageShipmentVolume"
                   editingField={editingField}
+                  tempValue={tempValues.averageShipmentVolume}
+                  onTempChange={handleTempChange}
                   onStartEdit={startEditing}
-                  onSave={() => saveField('averageShipmentVolume')}
+                  onSave={saveField}
                   onCancel={cancelEdit}
                   type="number"
                   placeholder="O'rtacha jo'natadigan yuk hajmi"
@@ -795,8 +861,10 @@ const Settings = () => {
                   value={userData.notes}
                   field="notes"
                   editingField={editingField}
+                  tempValue={tempValues.notes}
+                  onTempChange={handleTempChange}
                   onStartEdit={startEditing}
-                  onSave={() => saveField('notes')}
+                  onSave={saveField}
                   onCancel={cancelEdit}
                   placeholder="Yuk jo'natishga oid qo'shimcha ma'lumotlar..."
                   textarea={true}
@@ -806,7 +874,36 @@ const Settings = () => {
           )}
 
           {/* Account Info Card */}
-         
+          <InfoCard title="Hisob ma'lumotlari" icon={FaUserTie} color="green">
+            <div className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-500 ml-1 flex items-center gap-1">
+                  <FaEnvelope className="text-slate-400 text-sm" />
+                  Email
+                </label>
+                <div className="p-3 bg-slate-50 rounded-xl border border-gray-200">
+                  <span className="text-sm">{userData.email}</span>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">Email o'zgartirish uchun admin bilan bog'laning</p>
+              </div>
+              
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-500 ml-1">Hisob turi</label>
+                <div className="p-3 bg-slate-50 rounded-xl border border-gray-200 flex items-center justify-between">
+                  <span className="text-sm">
+                    {userData.role === 'driver' ? 'Haydovchi' : 'Yuk Jo\'natuvchi'}
+                  </span>
+                  <span className={`px-2 py-1 rounded-full text-xs ${
+                    userData.role === 'driver' 
+                      ? 'bg-blue-100 text-blue-800' 
+                      : 'bg-purple-100 text-purple-800'
+                  }`}>
+                    {userData.role === 'driver' ? '🚚' : '📦'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </InfoCard>
         </div>
       </div>
     </div>

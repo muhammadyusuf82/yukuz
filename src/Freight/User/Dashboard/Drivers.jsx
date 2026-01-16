@@ -54,7 +54,7 @@ const Drivers = () => {
             setLoading(true);
             try {
                 // Haydovchilar (transport) API dan ma'lumot olish
-                const baseUrl = 'https://tokennoty.pythonanywhere.com/api/transport/';
+                const baseUrl = 'https://tokennoty.pythonanywhere.com/api/freight/?role=driver';
                 const response = await fetch(baseUrl);
 
                 if (response.ok) {
@@ -116,9 +116,9 @@ const Drivers = () => {
                         {drivers.map(driver => (
                             <div key={driver.id} className="bg-white rounded-3xl shadow-md border border-gray-100 overflow-hidden relative transition-all hover:-translate-y-2 duration-300 hover:shadow-xl group">
                                 {/* Featured Badge */}
-                                <div className="absolute top-4 right-4 bg-linear-to-r from-blue-600 to-purple-700 text-white text-[10px] font-bold py-1 px-3 rounded-full z-10 uppercase tracking-wider">
+                                {/* <div className="absolute top-4 right-4 bg-linear-to-r from-blue-600 to-purple-700 text-white text-[10px] font-bold py-1 px-3 rounded-full z-10 uppercase tracking-wider">
                                     Top Haydovchi
-                                </div>
+                                </div> */}
 
                                 {/* Haydovchi Profili */}
                                 <div className="p-6 border-b border-gray-50 flex items-start gap-4">
