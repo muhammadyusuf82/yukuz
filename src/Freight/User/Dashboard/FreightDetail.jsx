@@ -44,6 +44,7 @@ const FreightDetail = ({ freightId, freightData, onBack }) => {
   // Map state
   const mapContainer = useRef(null);
   const map = useRef(null);
+  const routeSourceRef = useRef(null);
   const [showSatellite, setShowSatellite] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(10);
   const [isMapFullscreen, setIsMapFullscreen] = useState(false);
@@ -51,6 +52,19 @@ const FreightDetail = ({ freightId, freightData, onBack }) => {
   const [routeDistance, setRouteDistance] = useState(null);
   const [routeDuration, setRouteDuration] = useState(null);
   const [routeInstructions, setRouteInstructions] = useState([]);
+
+  // Translation mappings
+  const paymentConditionTranslations = {
+    "copied_documents": "Nusxa hujjatlar",
+    "original_document": "Asl hujjatlar",
+    "on_delivery": "Yetkazib berishda"
+  };
+
+  const paymentMethodTranslations = {
+    "cash": "Naqd pul",
+    "bank_transfer": "Bank o'tkazmasi",
+    "card": "Karta"
+  };
 
   useEffect(() => {
     const fetchFreightDetail = async () => {
@@ -190,6 +204,81 @@ const FreightDetail = ({ freightId, freightData, onBack }) => {
     }
   }, []);
 
+  // Add route to map
+  const addRouteToMap = useCallback((geometry) => {
+    if (!map.current || !geometry) return;
+
+    // Remove existing route layers if they exist
+    if (map.current.getLayer('route')) {
+      map.current.removeLayer('route');
+    }
+    if (map.current.getLayer('route-outline')) {
+      map.current.removeLayer('route-outline');
+    }
+    if (map.current.getSource('route')) {
+      map.current.removeSource('route');
+    }
+
+    // Add route source
+    map.current.addSource('route', {
+      type: 'geojson',
+      data: {
+        type: 'Feature',
+        properties: {},
+        geometry: geometry
+      }
+    });
+
+    // Store source reference
+    routeSourceRef.current = map.current.getSource('route');
+
+    // Add route outline for better visibility
+    map.current.addLayer({
+      id: 'route-outline',
+      type: 'line',
+      source: 'route',
+      layout: {
+        'line-join': 'round',
+        'line-cap': 'round'
+      },
+      paint: {
+        'line-color': '#FFFFFF',
+        'line-width': 6,
+        'line-opacity': 0.4
+      }
+    });
+
+    // Add main route line - solid line without dasharray
+    map.current.addLayer({
+      id: 'route',
+      type: 'line',
+      source: 'route',
+      layout: {
+        'line-join': 'round',
+        'line-cap': 'round'
+      },
+      paint: {
+        'line-color': '#2200ff',
+        'line-width': 4,
+        'line-opacity': 0.9
+      }
+    }, 'route-outline');
+  }, []);
+
+  // Re-add route when map style changes
+  const reAddRoute = useCallback(() => {
+    if (routeSourceRef.current && routeSourceRef.current._data) {
+      // Get the geometry from the source
+      const geometry = routeSourceRef.current._data.geometry;
+      if (geometry) {
+        // Wait a bit for map to be ready
+        setTimeout(() => {
+          addRouteToMap(geometry);
+        }, 100);
+      }
+    }
+  }, [addRouteToMap]);
+
   // Initialize map when freight data is loaded
   useEffect(() => {
     if (!freight || !mapContainer.current) return;
@@ -294,8 +383,8 @@ const FreightDetail = ({ freightId, freightData, onBack }) => {
                   </span>
                 </p>
                 <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #eee; font-size: 11px; color: #666;">
-                  Kenglik: ${freight.route_starts_where_data.city}<br/>
-                  Uzunlik: ${freight.route_ends_where_data.city}
+                  Kenglik: ${freight.route_starts_where_lat}<br/>
+                  Uzunlik: ${freight.route_starts_where_lon}
                 </div>
               </div>
             `)
@@ -345,15 +434,15 @@ const FreightDetail = ({ freightId, freightData, onBack }) => {
               <div style="padding: 12px; min-width: 220px;">
                 <h3 style="margin: 0; color: #10B981; font-weight: bold; font-size: 16px;">🏁 Tushirish joyi</h3>
                 <p style="margin: 8px 0 0 0; font-size: 14px; line-height: 1.4;">
-                  <strong style="font-size: 15px;">${freight.route_ends_where_data.city}</strong><br/>
-                  <span style="color: #555;">${freight.route_ends_where_data.region}</span><br/>
+                  <strong style="font-size: 15px;">${freight.route_ends_where_city}</strong><br/>
+                  <span style="color: #555;">${freight.route_ends_where_region}</span><br/>
                   <span style="font-size: 12px; color: #777;">
                     ${formatDate(freight.route_end_time_to)}
                   </span>
                 </p>
                 <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #eee; font-size: 11px; color: #666;">
-                  Qayerdan: ${freight.route_ends_where_data.city || 'Noma\'lum'}<br/>
-                  Qayerga: ${freight.route_ends_where_data.city || 'Noma\'lum'}
+                  Kenglik: ${freight.route_ends_where_lat || 'N/A'}<br/>
+                  Uzunlik: ${freight.route_ends_where_lon || 'N/A'}
                 </div>
               </div>
             `)
@@ -364,48 +453,8 @@ const FreightDetail = ({ freightId, freightData, onBack }) => {
       try {
         const routeGeometry = await fetchRoute(startLon, startLat, endLon, endLat);
         
-        // Add route source and layer
-        map.current.addSource('route', {
-          type: 'geojson',
-          data: {
-            type: 'Feature',
-            properties: {},
-            geometry: routeGeometry
-          }
-        });
-
-        // Add route outline for better visibility
-        map.current.addLayer({
-          id: 'route-outline',
-          type: 'line',
-          source: 'route',
-          layout: {
-            'line-join': 'round',
-            'line-cap': 'round'
-          },
-          paint: {
-            'line-color': '#FFFFFF',
-            'line-width': 6,
-            'line-opacity': 0.4
-          }
-        });
-
-        // Add main route line - CHANGED: Removed line-dasharray for solid line
-        map.current.addLayer({
-          id: 'route',
-          type: 'line',
-          source: 'route',
-          layout: {
-            'line-join': 'round',
-            'line-cap': 'round'
-          },
-          paint: {
-            'line-color': '#2200ff',
-            'line-width': 4,
-            'line-opacity': 0.9
-            // Removed: 'line-dasharray': [0, 2, 0] - This was making it dotted
-          }
-        }, 'route-outline');
+        // Add route to map
+        addRouteToMap(routeGeometry);
 
         // Add animated vehicle marker along the route
         if (routeGeometry.coordinates && routeGeometry.coordinates.length > 1) {
@@ -487,43 +536,7 @@ const FreightDetail = ({ freightId, freightData, onBack }) => {
           }
         };
 
-        map.current.addSource('route', {
-          type: 'geojson',
-          data: geojson
-        });
-
-        // Add route outline for fallback
-        map.current.addLayer({
-          id: 'route-outline',
-          type: 'line',
-          source: 'route',
-          layout: {
-            'line-join': 'round',
-            'line-cap': 'round'
-          },
-          paint: {
-            'line-color': '#FFFFFF',
-            'line-width': 6,
-            'line-opacity': 0.4
-          }
-        });
-
-        // Add main fallback route line - CHANGED: Removed line-dasharray
-        map.current.addLayer({
-          id: 'route',
-          type: 'line',
-          source: 'route',
-          layout: {
-            'line-join': 'round',
-            'line-cap': 'round'
-          },
-          paint: {
-            'line-color': '#EF4444',
-            'line-width': 4,
-            'line-opacity': 0.8
-            // Removed: 'line-dasharray': [2, 2] - This was making it dotted
-          }
-        }, 'route-outline');
+        addRouteToMap(geojson.geometry);
 
         // Fit bounds to markers
         const bounds = new maplibregl.LngLatBounds();
@@ -547,7 +560,7 @@ const FreightDetail = ({ freightId, freightData, onBack }) => {
         map.current = null;
       }
     };
-  }, [freight, fetchRoute]);
+  }, [freight, fetchRoute, addRouteToMap]);
 
   const toggleMapStyle = () => {
     if (!map.current) return;
@@ -593,6 +606,7 @@ const FreightDetail = ({ freightId, freightData, onBack }) => {
 
     map.current.setStyle(newStyle);
 
+    // Re-add route when style loads
     map.current.once('styledata', () => {
       // Re-add controls after style change
       map.current.addControl(new maplibregl.NavigationControl(), 'top-right');
@@ -601,40 +615,10 @@ const FreightDetail = ({ freightId, freightData, onBack }) => {
         unit: 'metric'
       }), 'bottom-left');
       
-      // Re-add route layers if they exist
-      if (freight) {
-        const startLat = parseFloat(freight.route_starts_where_lat);
-        const startLon = parseFloat(freight.route_starts_where_lon);
-        const endLat = parseFloat(freight.route_ends_where_lat || freight.route_starts_where_lat);
-        const endLon = parseFloat(freight.route_ends_where_lon || freight.route_starts_where_lon);
-        
-        // Re-add markers and route
-        setTimeout(() => {
-          // Add start marker
-          const startMarkerEl = document.createElement('div');
-          startMarkerEl.innerHTML = `
-            <div style="width: 30px; height: 30px; background: #3B82F6; border: 3px solid white; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-              <div style="width: 10px; height: 10px; background: white; border-radius: 50%;"></div>
-            </div>
-          `;
-          
-          new maplibregl.Marker({ element: startMarkerEl })
-            .setLngLat([startLon, startLat])
-            .addTo(map.current);
-            
-          // Add end marker
-          const endMarkerEl = document.createElement('div');
-          endMarkerEl.innerHTML = `
-            <div style="width: 30px; height: 30px; background: #10B981; border: 3px solid white; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-              <div style="width: 10px; height: 10px; background: white; border-radius: 50%;"></div>
-            </div>
-          `;
-          
-          new maplibregl.Marker({ element: endMarkerEl })
-            .setLngLat([endLon, endLat])
-            .addTo(map.current);
-        }, 100);
-      }
+      // Re-add route after a short delay
+      setTimeout(() => {
+        reAddRoute();
+      }, 300);
     });
   };
 
@@ -651,13 +635,13 @@ const FreightDetail = ({ freightId, freightData, onBack }) => {
   const formatDate = (dateString) => {
     if (!dateString) return 'Noma\'lum';
     const date = new Date(dateString);
-    return new Intl.DateTimeFormat('uz-UZ', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    }).format(date);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    
+    return `${day}.${month}.${year} ${hours}:${minutes}`;
   };
 
   const formatCurrency = (amount, currency) => {
@@ -696,6 +680,15 @@ const FreightDetail = ({ freightId, freightData, onBack }) => {
       default:
         return status;
     }
+  };
+
+  // Get translated payment values
+  const getPaymentConditionText = (value) => {
+    return paymentConditionTranslations[value] || value;
+  };
+
+  const getPaymentMethodText = (value) => {
+    return paymentMethodTranslations[value] || value;
   };
 
   if (loading) {
@@ -753,7 +746,7 @@ const FreightDetail = ({ freightId, freightData, onBack }) => {
   return (
     <div className={`min-h-screen bg-linear-to-br from-gray-50 to-blue-50 ${isMapFullscreen ? 'overflow-hidden' : ''}`}>
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 shadow-sm">
+      <div className="bg-white border-b border-gray-200 shadow-sm px-3 rounded-xl">
         <div className="max-w-7xl mx-auto py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
@@ -814,8 +807,8 @@ const FreightDetail = ({ freightId, freightData, onBack }) => {
                         {formatDate(freight.route_start_time_from)}
                       </div>
                       <div className="text-xs text-gray-500">
-                        📍 Qayerdan: {freight.route_starts_where_data.city}<br/>
-                        📍 Qayerga: {freight.route_starts_where_data.region}
+                        📍 Kenglik: {freight.route_starts_where_lat}<br/>
+                        📍 Uzunlik: {freight.route_starts_where_lon}
                       </div>
                     </div>
                   </div>
@@ -836,8 +829,8 @@ const FreightDetail = ({ freightId, freightData, onBack }) => {
                         {formatDate(freight.route_end_time_to)}
                       </div>
                       <div className="text-xs text-gray-500">
-                        📍 Qayerdan: {freight.route_ends_where_data.city || 'Noma\'lum'}<br/>
-                        📍 Qayerga: {freight.route_ends_where_data.region || 'Noma\'lum'}
+                        📍 Kenglik: {freight.route_ends_where_lat || 'N/A'}<br/>
+                        📍 Uzunlik: {freight.route_ends_where_lon || 'N/A'}
                       </div>
                     </div>
                   </div>
@@ -979,12 +972,12 @@ const FreightDetail = ({ freightId, freightData, onBack }) => {
               <div className="grid grid-cols-2 gap-4 mb-6">
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <p className="text-xs font-medium text-gray-500 mb-1">TO'LOV USULI</p>
-                  <p className="font-bold text-gray-800">{freight.payment_method}</p>
+                  <p className="font-bold text-gray-800">{getPaymentMethodText(freight.payment_method)}</p>
                 </div>
                 
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <p className="text-xs font-medium text-gray-500 mb-1">TO'LOV SHARTI</p>
-                  <p className="font-bold text-gray-800">{freight.payment_condition}</p>
+                  <p className="font-bold text-gray-800">{getPaymentConditionText(freight.payment_condition)}</p>
                 </div>
                 
                 <div className="bg-gray-50 p-4 rounded-lg">
