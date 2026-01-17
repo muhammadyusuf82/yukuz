@@ -66,6 +66,38 @@ const FreightDetail = ({ freightId, freightData, onBack }) => {
     "card": "Karta"
   };
 
+  // Helper function to get location display from the correct field names
+  const getLocationDisplay = (locationData) => {
+    if (!locationData) return { viloyat: "Malumot yo'q", tuman: "Malumot yo'q", kocha: "Malumot yo'q" };
+    
+    // If locationData is a string, try to parse it as JSON
+    if (typeof locationData === 'string') {
+      try {
+        locationData = JSON.parse(locationData);
+      } catch (e) {
+        // If parsing fails, return the string as viloyat
+        return {
+          viloyat: locationData || "Malumot yo'q",
+          tuman: "Malumot yo'q",
+          kocha: "Malumot yo'q"
+        };
+      }
+    }
+    
+    // Extract data using the CORRECT field names from your data structure
+    return {
+      viloyat: locationData?.region || locationData?.viloyat || locationData?.province || "Malumot yo'q",
+      tuman: locationData?.city || locationData?.tuman || locationData?.district || locationData?.area || "Malumot yo'q",
+      kocha: locationData?.street || locationData?.kocha || locationData?.address || locationData?.name || "Malumot yo'q"
+    };
+  };
+
+  // Helper function to get location display string
+  const getLocationString = (locationData) => {
+    const { viloyat, tuman, kocha } = getLocationDisplay(locationData);
+    return `${viloyat}, ${tuman}, ${kocha}`;
+  };
+
   useEffect(() => {
     const fetchFreightDetail = async () => {
       try {
@@ -98,6 +130,7 @@ const FreightDetail = ({ freightId, freightData, onBack }) => {
         } else {
           setError('Yuk ma\'lumotlarini yuklashda xatolik yuz berdi');
           
+          // Updated sample data with correct field names
           const sampleFreight = {
             body_type: "closed",
             created_at: "2026-01-07T09:24:22.733402Z",
@@ -121,16 +154,20 @@ const FreightDetail = ({ freightId, freightData, onBack }) => {
             public: true,
             route_end_time_from: "2026-01-08T09:24:21Z",
             route_end_time_to: "2026-01-08T09:24:21Z",
-            route_ends_where_city: "Toshkent",
-            route_ends_where_region: "Chorsu bozori",
+            route_ends_where_data: {
+              city: "Namangan City",
+              region: "Namangan Region",
+              street: "Oxunboboyev ko'chasi"
+            },
             route_ends_where_lat: "41.311081",
             route_ends_where_lon: "69.240537",
-            route_start_time_from: "2026-01-07T09:24:21Z",
-            route_start_time_to: "2026-01-07T09:24:21Z",
-            route_starts_where_city: "Xorazim",
+            route_starts_where_data: {
+              city: "Toshkent",
+              region: "Toshkent Region",
+              street: "Amir Temur shoh ko'chasi, 23-uy"
+            },
             route_starts_where_lat: "41.299500",
             route_starts_where_lon: "69.240100",
-            route_starts_where_region: "Xorazim shahar",
             shipping_mode: "FTL",
             status: "waiting for driver",
             unloading_method: "back",
@@ -283,10 +320,11 @@ const FreightDetail = ({ freightId, freightData, onBack }) => {
   useEffect(() => {
     if (!freight || !mapContainer.current) return;
 
-    const startLat = parseFloat(freight.route_starts_where_lat);
-    const startLon = parseFloat(freight.route_starts_where_lon);
-    const endLat = parseFloat(freight.route_ends_where_lat || freight.route_starts_where_lat);
-    const endLon = parseFloat(freight.route_ends_where_lon || freight.route_starts_where_lon);
+    // Use coordinates from freight data
+    const startLat = parseFloat(freight.route_starts_where_lat) || 41.2995;
+    const startLon = parseFloat(freight.route_starts_where_lon) || 69.2401;
+    const endLat = parseFloat(freight.route_ends_where_lat) || 41.3110;
+    const endLon = parseFloat(freight.route_ends_where_lon) || 69.2405;
 
     // Calculate center between start and end points
     const centerLat = (startLat + endLat) / 2;
@@ -330,6 +368,10 @@ const FreightDetail = ({ freightId, freightData, onBack }) => {
       maxWidth: 200,
       unit: 'metric'
     }), 'bottom-left');
+
+    // Get location data
+    const startLocation = getLocationDisplay(freight.route_starts_where_data);
+    const endLocation = getLocationDisplay(freight.route_ends_where_data);
 
     // When map loads
     map.current.on('load', async () => {
@@ -376,15 +418,14 @@ const FreightDetail = ({ freightId, freightData, onBack }) => {
               <div style="padding: 12px; min-width: 220px;">
                 <h3 style="margin: 0; color: #3B82F6; font-weight: bold; font-size: 16px;">🚚 Yuklash joyi</h3>
                 <p style="margin: 8px 0 0 0; font-size: 14px; line-height: 1.4;">
-                  <strong style="font-size: 15px;">${freight.route_starts_where_city}</strong><br/>
-                  <span style="color: #555;">${freight.route_starts_where_region}</span><br/>
-                  <span style="font-size: 12px; color: #777;">
-                    ${formatDate(freight.route_start_time_from)}
-                  </span>
+                  <strong style="font-size: 15px;">${startLocation.viloyat}</strong><br/>
+                  <span style="color: #555;">${startLocation.tuman}</span><br/>
+                  <span style="color: #666; font-size: 12px;">${startLocation.kocha}</span>
                 </p>
                 <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #eee; font-size: 11px; color: #666;">
-                  Kenglik: ${freight.route_starts_where_lat}<br/>
-                  Uzunlik: ${freight.route_starts_where_lon}
+                  <strong>Viloyat:</strong> ${startLocation.viloyat}<br/>
+                  <strong>Tuman:</strong> ${startLocation.tuman}<br/>
+                  <strong>Ko'cha:</strong> ${startLocation.kocha}
                 </div>
               </div>
             `)
@@ -434,15 +475,14 @@ const FreightDetail = ({ freightId, freightData, onBack }) => {
               <div style="padding: 12px; min-width: 220px;">
                 <h3 style="margin: 0; color: #10B981; font-weight: bold; font-size: 16px;">🏁 Tushirish joyi</h3>
                 <p style="margin: 8px 0 0 0; font-size: 14px; line-height: 1.4;">
-                  <strong style="font-size: 15px;">${freight.route_ends_where_city}</strong><br/>
-                  <span style="color: #555;">${freight.route_ends_where_region}</span><br/>
-                  <span style="font-size: 12px; color: #777;">
-                    ${formatDate(freight.route_end_time_to)}
-                  </span>
+                  <strong style="font-size: 15px;">${endLocation.viloyat}</strong><br/>
+                  <span style="color: #555;">${endLocation.tuman}</span><br/>
+                  <span style="color: #666; font-size: 12px;">${endLocation.kocha}</span>
                 </p>
                 <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #eee; font-size: 11px; color: #666;">
-                  Kenglik: ${freight.route_ends_where_lat || 'N/A'}<br/>
-                  Uzunlik: ${freight.route_ends_where_lon || 'N/A'}
+                  <strong>Viloyat:</strong> ${endLocation.viloyat}<br/>
+                  <strong>Tuman:</strong> ${endLocation.tuman}<br/>
+                  <strong>Ko'cha:</strong> ${endLocation.kocha}
                 </div>
               </div>
             `)
@@ -738,10 +778,9 @@ const FreightDetail = ({ freightId, freightData, onBack }) => {
     );
   }
 
-  const startLat = parseFloat(freight.route_starts_where_lat);
-  const startLon = parseFloat(freight.route_starts_where_lon);
-  const endLat = parseFloat(freight.route_ends_where_lat || freight.route_starts_where_lat);
-  const endLon = parseFloat(freight.route_ends_where_lon || freight.route_starts_where_lon);
+  // Get location data for display
+  const startLocation = getLocationDisplay(freight.route_starts_where_data);
+  const endLocation = getLocationDisplay(freight.route_ends_where_data);
 
   return (
     <div className={`min-h-screen bg-linear-to-br from-gray-50 to-blue-50 ${isMapFullscreen ? 'overflow-hidden' : ''}`}>
@@ -799,16 +838,13 @@ const FreightDetail = ({ freightId, freightData, onBack }) => {
                   </div>
                   <div className="flex-1">
                     <p className="text-sm font-medium text-gray-500 mb-1">QAYERDAN</p>
-                    <p className="text-lg font-bold text-gray-800">{freight.route_starts_where_city}</p>
-                    <p className="text-gray-600 text-sm">{freight.route_starts_where_region}</p>
-                    <div className="mt-2 space-y-1">
-                      <div className="flex items-center text-xs text-gray-500">
+                    <p className="text-lg font-bold text-gray-800">{startLocation.viloyat}</p>
+                    <p className="text-gray-600 text-sm">{startLocation.tuman}</p>
+                    <p className="text-gray-500 text-xs mt-1">{startLocation.kocha}</p>
+                    <div className="mt-3 space-y-1 text-xs text-gray-500">
+                      <div className="flex items-center">
                         <FaCalendarAlt className="mr-2" />
                         {formatDate(freight.route_start_time_from)}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        📍 Kenglik: {freight.route_starts_where_lat}<br/>
-                        📍 Uzunlik: {freight.route_starts_where_lon}
                       </div>
                     </div>
                   </div>
@@ -821,16 +857,13 @@ const FreightDetail = ({ freightId, freightData, onBack }) => {
                   </div>
                   <div className="flex-1">
                     <p className="text-sm font-medium text-gray-500 mb-1">QAYERGA</p>
-                    <p className="text-lg font-bold text-gray-800">{freight.route_ends_where_city}</p>
-                    <p className="text-gray-600 text-sm">{freight.route_ends_where_region}</p>
-                    <div className="mt-2 space-y-1">
-                      <div className="flex items-center text-xs text-gray-500">
+                    <p className="text-lg font-bold text-gray-800">{endLocation.viloyat}</p>
+                    <p className="text-gray-600 text-sm">{endLocation.tuman}</p>
+                    <p className="text-gray-500 text-xs mt-1">{endLocation.kocha}</p>
+                    <div className="mt-3 space-y-1 text-xs text-gray-500">
+                      <div className="flex items-center">
                         <FaCalendarAlt className="mr-2" />
                         {formatDate(freight.route_end_time_to)}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        📍 Kenglik: {freight.route_ends_where_lat || 'N/A'}<br/>
-                        📍 Uzunlik: {freight.route_ends_where_lon || 'N/A'}
                       </div>
                     </div>
                   </div>
@@ -1157,7 +1190,7 @@ const FreightDetail = ({ freightId, freightData, onBack }) => {
                 <h2 className="text-xl font-bold">Marshrut xaritasi</h2>
                 <p className="text-blue-200 text-sm">
                   Yukning haqiqiy yo'nalishi va transport marshruti
-                  {freight && ` | ${freight.route_starts_where_city} → ${freight.route_ends_where_city}`}
+                  {freight && ` | ${startLocation.viloyat} → ${endLocation.viloyat}`}
                 </p>
               </div>
             </div>
@@ -1256,14 +1289,14 @@ const FreightDetail = ({ freightId, freightData, onBack }) => {
                   <div className="w-6 h-6 rounded-full bg-blue-500 border-2 border-white shadow-md animate-pulse"></div>
                   <div>
                     <p className="text-xs font-medium text-gray-700">Yuklash joyi</p>
-                    <p className="text-xs text-gray-500">{freight.route_starts_where_city}</p>
+                    <p className="text-xs text-gray-500">{startLocation.viloyat}</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-3">
                   <div className="w-6 h-6 rounded-full bg-green-500 border-2 border-white shadow-md animate-pulse"></div>
                   <div>
                     <p className="text-xs font-medium text-gray-700">Tushirish joyi</p>
-                    <p className="text-xs text-gray-500">{freight.route_ends_where_city}</p>
+                    <p className="text-xs text-gray-500">{endLocation.viloyat}</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-3">
@@ -1288,13 +1321,19 @@ const FreightDetail = ({ freightId, freightData, onBack }) => {
               <div className="space-y-3 text-xs">
                 <div className="p-2 bg-blue-50 rounded-lg">
                   <p className="font-medium text-blue-600">Yuklash:</p>
-                  <p className="text-gray-600 truncate">{freight.route_starts_where_city}, {freight.route_starts_where_region}</p>
-                  <p className="text-gray-500 text-xs mt-1">{freight.route_starts_where_lat}, {freight.route_starts_where_lon}</p>
+                  <p className="text-gray-600 truncate">{startLocation.viloyat}</p>
+                  <p className="text-gray-500 text-xs mt-1">
+                    Tuman: {startLocation.tuman}<br/>
+                    Ko'cha: {startLocation.kocha}
+                  </p>
                 </div>
                 <div className="p-2 bg-green-50 rounded-lg">
                   <p className="font-medium text-green-600">Tushirish:</p>
-                  <p className="text-gray-600 truncate">{freight.route_ends_where_city}, {freight.route_ends_where_region}</p>
-                  <p className="text-gray-500 text-xs mt-1">{freight.route_ends_where_lat || 'N/A'}, {freight.route_ends_where_lon || 'N/A'}</p>
+                  <p className="text-gray-600 truncate">{endLocation.viloyat}</p>
+                  <p className="text-gray-500 text-xs mt-1">
+                    Tuman: {endLocation.tuman}<br/>
+                    Ko'cha: {endLocation.kocha}
+                  </p>
                 </div>
                 <div className="p-2 bg-red-50 rounded-lg">
                   <p className="font-medium text-red-600">Marshrut:</p>

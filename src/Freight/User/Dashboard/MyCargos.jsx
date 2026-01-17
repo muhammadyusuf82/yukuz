@@ -16,36 +16,36 @@ const MyCargos = ({ onFreightDetail }) => {
   const [selectedFreight, setSelectedFreight] = useState(null)
   const [editFormData, setEditFormData] = useState({})
 
-  const getAuthToken = async () => {
-    try {
-      const response = await fetch('https://tokennoty.pythonanywhere.com/api/token/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: 'admin',
-          password: "123",
-          phone_number: "+998993967336"
-        }),
-      });
+  // const getAuthToken = async () => {
+  //   try {
+  //     const response = await fetch('https://tokennoty.pythonanywhere.com/api/token/', {
+  //       method: 'POST',
+  //       headers: { 'Content-Type': 'application/json' },
+  //       body: JSON.stringify({
+  //         username: 'admin',
+  //         password: "123",
+  //         phone_number: "+998993967336"
+  //       }),
+  //     });
 
-      if (response.ok) {
-        const data = await response.json();
-        const token = data.token || data.access_token || data.access;
-        if (token) {
-          localStorage.setItem('access_token', token);
-          return token;
-        }
-      }
-    } catch (error) {
-      console.error('Token olishda xato:', error);
-    }
-    return null;
-  };
+  //     if (response.ok) {
+  //       const data = await response.json();
+  //       const token = data.token || data.access_token || data.access;
+  //       if (token) {
+  //         localStorage.setItem('access_token', token);
+  //         return token;
+  //       }
+  //     }
+  //   } catch (error) {
+  //     console.error('Token olishda xato:', error);
+  //   }
+  //   return null;
+  // };
 
   const loadData = async () => {
     setLoading(true);
-    let token = localStorage.getItem('access_token')
-    if (!token) token = await getAuthToken();
+    let token = localStorage.getItem('token')
+    // if (!token) token = await getAuthToken();
 
     try {
       const userRes = await fetch('https://tokennoty.pythonanywhere.com/api/users/', {
