@@ -52,7 +52,7 @@ const Navbar = () => {
           <NavLink to='/freight/xarita' className={({ isActive }) => `${isActive ? 'text-white bg-[#4361ee]' : 'text-gray-600 hover:text-white hover:bg-[#4361ee]'} font-semibold cursor-pointer duration-300 rounded-xl px-4 py-2 transition-all`}>Xarita</NavLink>
           <NavLink to='/freight/narxlar' className={({ isActive }) => `${isActive ? 'text-white bg-[#4361ee]' : 'text-gray-600 hover:text-white hover:bg-[#4361ee]'} font-semibold cursor-pointer duration-300 rounded-xl px-4 py-2 transition-all`}>Narxlar</NavLink>
           <NavLink to='/freight/yordam' className={({ isActive }) => `${isActive ? 'text-white bg-[#4361ee]' : 'text-gray-600 hover:text-white hover:bg-[#4361ee]'} font-semibold cursor-pointer duration-300 rounded-xl px-4 py-2 transition-all`}>Yordam</NavLink>
-          <NavLink className="w-15 h-15 rounded-full border-4 border-[#4361ee] shadow-lg overflow-hidden">
+          <NavLink to='/profile-setup' className="w-15 h-15 rounded-full border-4 border-[#4361ee] shadow-lg overflow-hidden">
                             {photoUrl ? (
                                 <img src={photoUrl} className="w-full h-full object-cover"/>
                             ) : (

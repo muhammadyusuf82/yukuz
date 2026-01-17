@@ -543,7 +543,7 @@ const Home = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8 sm:gap-10 md:gap-12">
                 {steps.map((step, index) => (
                   <div key={index} className="relative">
-                    <div className="bg-white rounded-2xl p-6 sm:p-8 md:p-10 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100">
+                    <div className="bg-white rounded-2xl p-6 py-10 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100">
 
                       <div className="w-12 h-12 m-auto sm:w-14 sm:h-14 md:w-14 md:h-14 bg-linear-to-br from-blue-600 to-purple-500 rounded-full flex items-center justify-center mb-5">
                         <span className="text-white text-xl sm:text-2xl md:text-3xl font-bold">{step.number}</span>
@@ -597,10 +597,10 @@ const Home = () => {
         <div className="mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
           <div className="text-center mb-12 sm:mb-16 md:mb-20">
             <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-4 sm:mb-6">
-              Faol Yuklar
+              {t.cargoTitle}
             </h2>
             <p className="text-base sm:text-lg md:text-xl text-gray-600 max-w-2xl mx-auto px-4">
-              Hozir tashilishi kerak bo'lgan yuklar
+              {t.cargoDesc}
             </p>
           </div>
 

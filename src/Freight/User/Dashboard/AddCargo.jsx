@@ -12,11 +12,138 @@ import {
     FaSyncAlt,
     FaPlus,
     FaMinus,
-    FaExclamationTriangle
+    FaExclamationTriangle,
+    FaChevronDown,
+    FaCheck
 } from "react-icons/fa";
 import { FaLocationCrosshairs } from "react-icons/fa6";
 
 const baseUrl = 'https://tokennoty.pythonanywhere.com/api/freight/';
+
+// Custom Dropdown Component
+const CustomDropdown = ({ 
+  label, 
+  value, 
+  options, 
+  onChange, 
+  name,
+  placeholder = "Tanlang...",
+  className = ""
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  const selectedOption = options.find(opt => opt.value === value) || { value: '', label: placeholder };
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  return (
+    <div className={`space-y-1.5 ${className}`} ref={dropdownRef}>
+      {label && (
+        <label className="text-sm font-semibold text-slate-700 ml-1">{label}</label>
+      )}
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => setIsOpen(!isOpen)}
+          className={`w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 text-left flex justify-between items-center focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all ${isOpen ? 'ring-2 ring-blue-500 bg-white' : ''}`}
+        >
+          <span className={value ? 'text-slate-800' : 'text-slate-400'}>
+            {selectedOption.label}
+          </span>
+          <FaChevronDown className={`text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        </button>
+        
+        {isOpen && (
+          <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-2xl shadow-lg max-h-60 overflow-y-auto">
+            {options.map((option) => (
+              <div
+                key={option.value}
+                onClick={() => {
+                  onChange({ target: { name, value: option.value } });
+                  setIsOpen(false);
+                }}
+                className={`p-4 hover:bg-slate-50 cursor-pointer transition-colors flex justify-between items-center ${value === option.value ? 'bg-blue-50 text-blue-600' : ''}`}
+              >
+                <span>{option.label}</span>
+                {value === option.value && <FaCheck className="text-blue-600" />}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Define options from Django models with Uzbek translations
+const shippingModeOptions = [
+  { value: 'FTL', label: "To'liq yuk (FTL)" },
+  { value: 'LTL', label: "Qismiy yuk (LTL)" }
+];
+
+const vehicleCategoryOptions = [
+  { value: 'van', label: 'Van' },
+  { value: 'semitruck', label: 'Yarim tirkama' },
+  { value: 'truck', label: 'Yuk mashinasi' },
+  { value: 'doubletrailer', label: 'Ikki tirkamali' },
+  { value: 'pickup', label: 'Pikap' },
+  { value: 'container', label: 'Konteyner' },
+  { value: 'refrigerator', label: 'Sovutgichli' },
+  { value: 'tanktruck', label: 'Silonli' }
+];
+
+const bodyTypeOptions = [
+  { value: 'open', label: 'Ochiq' },
+  { value: 'closed', label: 'Yopiq' }
+];
+
+const loadingMethodOptions = [
+  { value: 'back', label: 'Orqadan' },
+  { value: 'top', label: 'Ustidan' }
+];
+
+const dangerOptions = [
+  { value: '1', label: '1-daraja: Portlovchi moddalar va buyumlar' },
+  { value: '21', label: '2.1-daraja: Yonuvchi gazlar' },
+  { value: '22', label: '2.2-daraja: Yonmas gazlar' },
+  { value: '23', label: '2.3-daraja: Zaharli gazlar' },
+  { value: '3', label: '3-daraja: Yonuvchi suyuqliklar' },
+  { value: '41', label: '4.1-daraja: Yonuvchi qattiq moddalar' },
+  { value: '42', label: '4.2-daraja: Oʻz-oʻzidan yonuvchi moddalar' },
+  { value: '43', label: '4.3-daraja: Suv bilan aloqa qilganda yonuvchi gazlar chiqaradigan moddalar' },
+  { value: '51', label: '5.1-daraja: Oksidlovchi moddalar' },
+  { value: '52', label: '5.2-daraja: Organik peroksidlar' },
+  { value: '61', label: '6.1-daraja: Zaharli moddalar' },
+  { value: '62', label: '6.2-daraja: Yuqumli moddalar' },
+  { value: '7', label: '7-daraja: Radioaktiv moddalar' },
+  { value: '8', label: '8-daraja: Korroziv moddalar' },
+  { value: '9', label: '9-daraja: Boshqa xavfli moddalar' }
+];
+
+const paymentMethodOptions = [
+  { value: 'cash', label: 'Naqd pul' },
+  { value: 'card', label: 'Karta' },
+  { value: 'bank_transfer', label: 'Bank o\'tkazmasi' },
+  { value: 'btc', label: 'Bitcoin' },
+  { value: 'eth', label: 'Ethereum' },
+  { value: 'click', label: 'Click' },
+  { value: 'payme', label: 'Payme' }
+];
+
+const paymentConditionOptions = [
+  { value: 'copied_documents', label: 'Nusxa hujjatlar' },
+  { value: 'original_document', label: 'Asl hujjatlar' },
+  { value: 'digital_document', label: 'Raqamli hujjatlar' }
+];
 
 const AddCargo = ({ onNavigate }) => {
     const [loading, setLoading] = useState(false);
@@ -59,56 +186,73 @@ const AddCargo = ({ onNavigate }) => {
     const [mapLoaded, setMapLoaded] = useState(false);
     const [showSatellite, setShowSatellite] = useState(false);
     const [coordinateWarning, setCoordinateWarning] = useState('');
-    const [activeMarker, setActiveMarker] = useState('start'); // 'start' or 'end'
-    const [markerInstructions, setMarkerInstructions] = useState('Select start location on map (blue marker)');
+    const [activeMarker, setActiveMarker] = useState('start');
+    const [markerInstructions, setMarkerInstructions] = useState('Xaritadan boshlanish manzilini tanlang (ko\'k marker)');
 
-    // Use ref for activeMarker so we can access current value in event handlers
     const activeMarkerRef = useRef(activeMarker);
     
-    // Update the ref whenever activeMarker changes
     useEffect(() => {
         activeMarkerRef.current = activeMarker;
         setMarkerInstructions(activeMarker === 'start' 
-            ? 'Select start location on map (blue marker)' 
-            : 'Select end location on map (red marker)');
+            ? 'Xaritadan boshlanish manzilini tanlang (ko\'k marker)' 
+            : 'Xaritadan tugash manzilini tanlang (qizil marker)');
     }, [activeMarker]);
 
-    // Helper function to format coordinates to max 9 digits
     const formatCoordinate = (coord) => {
         if (!coord && coord !== 0) return '';
         
         const str = coord.toString();
-        // Remove any leading/trailing whitespace
         const trimmed = str.trim();
         
-        // Check if the coordinate is already within 9 digits
         if (trimmed.length <= 9) {
             return trimmed;
         }
         
-        // For numbers with decimal point
         if (trimmed.includes('.')) {
             const [integerPart, decimalPart] = trimmed.split('.');
             const integerLength = integerPart.length;
-            const availableDecimalDigits = 9 - integerLength - 1; // -1 for decimal point
+            const availableDecimalDigits = 9 - integerLength - 1;
             
             if (availableDecimalDigits > 0) {
                 return `${integerPart}.${decimalPart.substring(0, availableDecimalDigits)}`;
             } else {
-                // If no space for decimals, return just integer part
                 return integerPart;
             }
         }
         
-        // For integers without decimal point
         return trimmed.substring(0, 9);
     };
 
-    // Function to get user location
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        
+        const isStartCoord = name.includes('route_starts_where');
+        const isEndCoord = name.includes('route_ends_where');
+        
+        if (isStartCoord || isEndCoord) {
+            const formattedValue = formatCoordinate(value);
+            setFormData(prev => ({
+                ...prev,
+                [name]: formattedValue
+            }));
+            
+            if (value.length > 9) {
+                setCoordinateWarning('Koordinatalar 9 raqamga qisqartirildi');
+            } else {
+                setCoordinateWarning('');
+            }
+        } else {
+            setFormData(prev => ({
+                ...prev,
+                [name]: value
+            }));
+        }
+    };
+
     const getUserLocation = useCallback(() => {
         return new Promise((resolve, reject) => {
             if (!navigator.geolocation) {
-                reject(new Error('Geolocation is not supported by your browser'));
+                reject(new Error('Brauzeringiz geolokatsiyani qo\'llab-quvvatlamaydi'));
                 return;
             }
 
@@ -129,7 +273,6 @@ const AddCargo = ({ onNavigate }) => {
                     setUserPosition([parseFloat(location.lon), parseFloat(location.lat)]);
                     setLocationLoading(false);
                     
-                    // Update map center
                     if (map.current) {
                         map.current.flyTo({
                             center: [parseFloat(location.lon), parseFloat(location.lat)],
@@ -138,25 +281,24 @@ const AddCargo = ({ onNavigate }) => {
                         });
                     }
                     
-                    // Update marker with formatted coordinates using current active marker
                     updateMarker(parseFloat(location.lon), parseFloat(location.lat), activeMarkerRef.current);
                     
                     resolve(location);
                 },
                 (error) => {
-                    let errorMessage = 'Unable to retrieve your location';
+                    let errorMessage = 'Joylashuvni aniqlab bo\'lmadi';
                     switch (error.code) {
                         case error.PERMISSION_DENIED:
-                            errorMessage = 'Location permission denied. Please enable location services.';
+                            errorMessage = 'Joylashuv ruxsati berilmagan. Iltimos, joylashuv xizmatlarini yoqing.';
                             break;
                         case error.POSITION_UNAVAILABLE:
-                            errorMessage = 'Location information is unavailable.';
+                            errorMessage = 'Joylashuv ma\'lumoti mavjud emas.';
                             break;
                         case error.TIMEOUT:
-                            errorMessage = 'Location request timed out.';
+                            errorMessage = 'Joylashuv so\'rovi vaqt tugadi.';
                             break;
                         default:
-                            errorMessage = 'An unknown error occurred.';
+                            errorMessage = '';
                     }
                     setLocationError(errorMessage);
                     setLocationLoading(false);
@@ -171,36 +313,30 @@ const AddCargo = ({ onNavigate }) => {
         });
     }, []);
 
-    // Update marker position with coordinate formatting
     const updateMarker = useCallback((lng, lat, markerType) => {
         if (!map.current) return;
         
-        // Format coordinates to max 9 digits
         const formattedLng = formatCoordinate(lng);
         const formattedLat = formatCoordinate(lat);
         
-        // Check if coordinates were truncated
         const originalLngStr = lng.toString();
         const originalLatStr = lat.toString();
         
         if (originalLngStr.length > 9 || originalLatStr.length > 9) {
-            setCoordinateWarning('Coordinates truncated to 9 digits');
+            setCoordinateWarning('Koordinatalar 9 raqamga qisqartirildi');
         } else {
             setCoordinateWarning('');
         }
         
-        // Remove existing marker of this type
         if (markerType === 'start' && startMarker.current) {
             startMarker.current.remove();
         } else if (markerType === 'end' && endMarker.current) {
             endMarker.current.remove();
         }
 
-        // Parse formatted coordinates for the marker position
         const markerLng = parseFloat(formattedLng);
         const markerLat = parseFloat(formattedLat);
 
-        // Create custom marker element with different colors for start and end
         const el = document.createElement('div');
         el.className = `${markerType}-location-marker`;
         el.style.width = '32px';
@@ -212,7 +348,6 @@ const AddCargo = ({ onNavigate }) => {
         el.style.cursor = 'pointer';
         el.style.zIndex = '1000';
 
-        // Add marker icon
         const icon = document.createElement('div');
         icon.innerHTML = markerType === 'start' ? '🚚' : '📍';
         icon.style.fontSize = '16px';
@@ -222,7 +357,6 @@ const AddCargo = ({ onNavigate }) => {
         icon.style.transform = 'translate(-50%, -50%)';
         el.appendChild(icon);
 
-        // Create and add marker to map
         const newMarker = new maplibregl.Marker({
             element: el,
             draggable: true
@@ -230,14 +364,12 @@ const AddCargo = ({ onNavigate }) => {
             .setLngLat([markerLng, markerLat])
             .addTo(map.current);
 
-        // Store marker reference
         if (markerType === 'start') {
             startMarker.current = newMarker;
         } else {
             endMarker.current = newMarker;
         }
 
-        // Add popup to marker
         const popup = new maplibregl.Popup({
             offset: 25,
             closeButton: false,
@@ -256,7 +388,6 @@ const AddCargo = ({ onNavigate }) => {
         
         newMarker.setPopup(popup);
 
-        // Show popup on hover
         el.addEventListener('mouseenter', () => {
             newMarker.togglePopup();
         });
@@ -265,20 +396,17 @@ const AddCargo = ({ onNavigate }) => {
             newMarker.togglePopup();
         });
 
-        // Update form data when marker is dragged
         newMarker.on('dragend', () => {
             const lngLat = newMarker.getLngLat();
             
-            // Format the dragged coordinates
             const draggedFormattedLng = formatCoordinate(lngLat.lng);
             const draggedFormattedLat = formatCoordinate(lngLat.lat);
             
-            // Check if dragged coordinates were truncated
             const draggedOriginalLngStr = lngLat.lng.toString();
             const draggedOriginalLatStr = lngLat.lat.toString();
             
             if (draggedOriginalLngStr.length > 9 || draggedOriginalLatStr.length > 9) {
-                setCoordinateWarning('Coordinates truncated to 9 digits');
+                setCoordinateWarning('Koordinatalar 9 raqamga qisqartirildi');
             } else {
                 setCoordinateWarning('');
             }
@@ -290,7 +418,6 @@ const AddCargo = ({ onNavigate }) => {
             }));
         });
 
-        // Update form data with formatted coordinates
         setFormData(prev => ({
             ...prev,
             [`route_${markerType}s_where_lon`]: formattedLng,
@@ -298,11 +425,10 @@ const AddCargo = ({ onNavigate }) => {
         }));
     }, []);
 
-    // Initialize Map
     useEffect(() => {
         if (!mapContainer.current || map.current) return;
 
-        console.log('Initializing detailed map...');
+        console.log('Batafsil xarita ishga tushmoqda...');
         
         map.current = new maplibregl.Map({
             container: mapContainer.current,
@@ -332,34 +458,28 @@ const AddCargo = ({ onNavigate }) => {
             interactive: true,
         });
 
-        // Track zoom level
         map.current.on('zoom', () => {
             const currentZoom = map.current.getZoom();
             setZoomLevel(currentZoom);
         });
 
-        // Track center changes
         map.current.on('move', () => {
             const center = map.current.getCenter();
             setLng(center.lng);
             setLat(center.lat);
         });
 
-        // Add navigation controls
         map.current.addControl(new maplibregl.NavigationControl(), 'top-right');
 
-        // Add scale control
         map.current.addControl(new maplibregl.ScaleControl({
             maxWidth: 200,
             unit: 'metric'
         }), 'bottom-left');
 
-        // When map loads
         map.current.on('load', () => {
-            console.log('Detailed map loaded');
+            console.log('Batafsil xarita yuklandi');
             setMapLoaded(true);
             
-            // Load user location from localStorage
             const savedLocation = localStorage.getItem('userLocation');
             if (savedLocation) {
                 try {
@@ -368,19 +488,16 @@ const AddCargo = ({ onNavigate }) => {
                         setUserPosition([parseFloat(location.lon), parseFloat(location.lat)]);
                     }
                 } catch (error) {
-                    console.error('Error parsing saved location:', error);
+                    console.error('Saqlangan joylashuvni o\'qishda xatolik:', error);
                 }
             }
         });
 
-        // Add click event to place marker with formatted coordinates
-        // Use the current activeMarkerRef value
         map.current.on('click', (e) => {
             const { lng, lat } = e.lngLat;
             updateMarker(lng, lat, activeMarkerRef.current);
         });
 
-        // Cleanup on unmount
         return () => {
             if (map.current) {
                 map.current.remove();
@@ -390,16 +507,14 @@ const AddCargo = ({ onNavigate }) => {
         };
     }, [updateMarker]);
 
-    // Function to handle "Use Current Location" button
     const handleUseCurrentLocation = async () => {
         try {
             await getUserLocation();
         } catch (error) {
-            console.error('Failed to get location:', error.message);
+            console.error('Joylashuvni olishda xatolik:', error.message);
         }
     };
 
-    // Function to clear the selected location
     const handleClearLocation = (markerType) => {
         if (markerType === 'start' && startMarker.current) {
             startMarker.current.remove();
@@ -417,7 +532,6 @@ const AddCargo = ({ onNavigate }) => {
         setCoordinateWarning('');
     };
 
-    // Function to center on Tashkent
     const centerOnTashkent = () => {
         if (map.current) {
             map.current.flyTo({
@@ -428,7 +542,6 @@ const AddCargo = ({ onNavigate }) => {
         }
     };
 
-    // Function to reset view to Uzbekistan
     const resetView = () => {
         if (map.current) {
             map.current.flyTo({
@@ -439,7 +552,6 @@ const AddCargo = ({ onNavigate }) => {
         }
     };
 
-    // Toggle satellite view
     const toggleMapStyle = () => {
         const newShowSatellite = !showSatellite;
         setShowSatellite(newShowSatellite);
@@ -483,9 +595,7 @@ const AddCargo = ({ onNavigate }) => {
 
             map.current.setStyle(newStyle);
 
-            // Re-add markers after style change
             map.current.once('styledata', () => {
-                // Re-add start marker if exists
                 if (startMarker.current && formData.route_starts_where_lat && formData.route_starts_where_lon) {
                     const lng = parseFloat(formData.route_starts_where_lon);
                     const lat = parseFloat(formData.route_starts_where_lat);
@@ -494,7 +604,6 @@ const AddCargo = ({ onNavigate }) => {
                     }
                 }
                 
-                // Re-add end marker if exists
                 if (endMarker.current && formData.route_ends_where_lat && formData.route_ends_where_lon) {
                     const lng = parseFloat(formData.route_ends_where_lon);
                     const lat = parseFloat(formData.route_ends_where_lat);
@@ -503,34 +612,6 @@ const AddCargo = ({ onNavigate }) => {
                     }
                 }
             });
-        }
-    };
-
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        
-        // Check if it's a coordinate field
-        const isStartCoord = name.includes('route_starts_where');
-        const isEndCoord = name.includes('route_ends_where');
-        
-        if (isStartCoord || isEndCoord) {
-            const formattedValue = formatCoordinate(value);
-            setFormData(prev => ({
-                ...prev,
-                [name]: formattedValue
-            }));
-            
-            // Check for warning
-            if (value.length > 9) {
-                setCoordinateWarning('Coordinates truncated to 9 digits');
-            } else {
-                setCoordinateWarning('');
-            }
-        } else {
-            setFormData(prev => ({
-                ...prev,
-                [name]: value
-            }));
         }
     };
 
@@ -562,39 +643,37 @@ const AddCargo = ({ onNavigate }) => {
         const form = e.target;
         const formDataObj = new FormData();
 
-        // Validate coordinates before submission
         const startLat = formData.route_starts_where_lat;
         const startLon = formData.route_starts_where_lon;
         const endLat = formData.route_ends_where_lat;
         const endLon = formData.route_ends_where_lon;
         
         if (startLat && startLat.length > 9) {
-            alert('Error: Start latitude exceeds 9 digits');
+            alert('Xatolik: Boshlanish kengligi 9 raqamdan oshib ketdi');
             setLoading(false);
             return;
         }
         
         if (startLon && startLon.length > 9) {
-            alert('Error: Start longitude exceeds 9 digits');
+            alert('Xatolik: Boshlanish uzunligi 9 raqamdan oshib ketdi');
             setLoading(false);
             return;
         }
         
         if (endLat && endLat.length > 9) {
-            alert('Error: End latitude exceeds 9 digits');
+            alert('Xatolik: Tugash kengligi 9 raqamdan oshib ketdi');
             setLoading(false);
             return;
         }
         
         if (endLon && endLon.length > 9) {
-            alert('Error: End longitude exceeds 9 digits');
+            alert('Xatolik: Tugash uzunligi 9 raqamdan oshib ketdi');
             setLoading(false);
             return;
         }
 
-        // Append all form fields
         formDataObj.append('public', 'true');
-        formDataObj.append('danger', '1');
+        formDataObj.append('danger', formData.danger || '1');
         formDataObj.append('weight', formData.weight || 0);
         formDataObj.append('volume', formData.volume || "0");
         formDataObj.append('freight_type', formData.freight_type || '');
@@ -603,23 +682,18 @@ const AddCargo = ({ onNavigate }) => {
         formDataObj.append('vehicle_category', formData.vehicle_category || 'van');
         formDataObj.append('body_type', formData.body_type || 'open');
 
-        // Start location
         formDataObj.append('route_starts_where_region', formData.route_starts_where_region || '');
         formDataObj.append('route_starts_where_city', formData.route_starts_where_city || '');
         
-        // Use formatted coordinates or default to Tashkent
         formDataObj.append('route_starts_where_lat', startLat || '41.2995');
         formDataObj.append('route_starts_where_lon', startLon || '69.2401');
 
-        // End location
         formDataObj.append('route_ends_where_region', formData.route_ends_where_region || '');
         formDataObj.append('route_ends_where_city', formData.route_ends_where_city || '');
         
-        // Use formatted coordinates or default to Tashkent
         formDataObj.append('route_ends_where_lat', endLat || '41.2995');
         formDataObj.append('route_ends_where_lon', endLon || '69.2401');
 
-        // Time fields
         const now = new Date();
         const tomorrow = new Date(now);
         tomorrow.setDate(tomorrow.getDate() + 1);
@@ -631,26 +705,22 @@ const AddCargo = ({ onNavigate }) => {
         formDataObj.append('route_end_time_from', formatDate(tomorrow));
         formDataObj.append('route_end_time_to', formatDate(tomorrow));
 
-        // Loading/unloading methods
         formDataObj.append('loading_method', formData.loading_method || 'back');
         formDataObj.append('unloading_method', formData.unloading_method || 'back');
 
-        // Payment info
         formDataObj.append('freight_rate_currency', 'UZS');
         formDataObj.append('freight_rate_amount', formData.freight_rate_amount || "0");
         formDataObj.append('payment_method', formData.payment_method || 'cash');
         formDataObj.append('payment_condition', formData.payment_condition || 'copied_documents');
         formDataObj.append('payment_period', formData.payment_period || 0);
 
-        // Photo
         if (form.photo && form.photo.files[0]) {
             formDataObj.append('photo', form.photo.files[0]);
         }
 
-        // Display coordinates for debugging
-        console.log('Coordinates being sent:', {
-            start: { lat: startLat || '41.2995', lon: startLon || '69.2401' },
-            end: { lat: endLat || '41.2995', lon: endLon || '69.2401' }
+        console.log('Yuborilayotgan koordinatalar:', {
+            boshlanish: { kenglik: startLat || '41.2995', uzunlik: startLon || '69.2401' },
+            tugash: { kenglik: endLat || '41.2995', uzunlik: endLon || '69.2401' }
         });
 
         try {
@@ -664,23 +734,22 @@ const AddCargo = ({ onNavigate }) => {
 
             if (response.ok) {
                 const data = await response.json();
-                console.log('Success:', data);
+                console.log('Muvaffaqiyatli:', data);
                 alert("Yuk muvaffaqiyatli qo'shildi!");
                 onNavigate();
             } else {
                 const errorText = await response.text();
-                console.error("API Error:", errorText);
-                alert(`Xatolik: ${response.status} - ${errorText.substring(0, 100)}`);
+                console.error("API Xatosi:", errorText);
+                // alert(`Xatolik: ${response.status} - ${errorText.substring(0, 100)}`);
             }
         } catch (err) {
-            console.error("Network error:", err);
-            alert("Serverga ulanishda xatolik yuz berdi");
+            console.error("Tarmoq xatosi:", err);
+            // alert("Serverga ulanishda xatolik yuz berdi");
         } finally {
             setLoading(false);
         }
     };
 
-    // Function to set active marker type
     const setMarkerType = (type) => {
         setActiveMarker(type);
     };
@@ -704,7 +773,7 @@ const AddCargo = ({ onNavigate }) => {
 
             <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    {/* Product Name */}
+                    {/* Mahsulot nomi */}
                     <div className="space-y-1.5">
                         <label className="text-sm font-semibold text-slate-700 ml-1">Mahsulot nomi *</label>
                         <input
@@ -717,7 +786,7 @@ const AddCargo = ({ onNavigate }) => {
                         />
                     </div>
 
-                    {/* Price */}
+                    {/* Narxi */}
                     <div className="space-y-1.5">
                         <label className="text-sm font-semibold text-slate-700 ml-1">Narxi (UZS) *</label>
                         <div className="relative">
@@ -734,8 +803,7 @@ const AddCargo = ({ onNavigate }) => {
                         </div>
                     </div>
 
-
-                    {/* Weight */}
+                    {/* Og'irligi */}
                     <div className="space-y-1.5">
                         <label className="text-sm font-semibold text-slate-700 ml-1">Og'irligi (kg) *</label>
                         <input
@@ -749,7 +817,7 @@ const AddCargo = ({ onNavigate }) => {
                         />
                     </div>
 
-                    {/* Volume */}
+                    {/* Hajmi */}
                     <div className="space-y-1.5">
                         <label className="text-sm font-semibold text-slate-700 ml-1">Hajmi (m³) *</label>
                         <input
@@ -763,95 +831,93 @@ const AddCargo = ({ onNavigate }) => {
                         />
                     </div>
 
-                    {/* Danger Level */}
+                    {/* Yukning xavflilik darajasi */}
+                    <CustomDropdown
+                        label="Yukning xavflilik darajasi"
+                        name="danger"
+                        value={formData.danger}
+                        options={dangerOptions}
+                        onChange={handleChange}
+                    />
+
+                    {/* Transport turi */}
+                    <CustomDropdown
+                        label="Transport turi"
+                        name="vehicle_category"
+                        value={formData.vehicle_category}
+                        options={vehicleCategoryOptions}
+                        onChange={handleChange}
+                    />
+
+                    {/* Kuzov turi */}
+                    <CustomDropdown
+                        label="Kuzov turi"
+                        name="body_type"
+                        value={formData.body_type}
+                        options={bodyTypeOptions}
+                        onChange={handleChange}
+                    />
+
+                    {/* Yetkazib berish rejimi */}
+                    <CustomDropdown
+                        label="Yetkazib berish rejimi"
+                        name="shipping_mode"
+                        value={formData.shipping_mode}
+                        options={shippingModeOptions}
+                        onChange={handleChange}
+                    />
+
+                    {/* Yuklash usuli */}
+                    <CustomDropdown
+                        label="Yuklash usuli"
+                        name="loading_method"
+                        value={formData.loading_method}
+                        options={loadingMethodOptions}
+                        onChange={handleChange}
+                    />
+
+                    {/* Yuk tushirish usuli */}
+                    <CustomDropdown
+                        label="Yuk tushirish usuli"
+                        name="unloading_method"
+                        value={formData.unloading_method}
+                        options={loadingMethodOptions}
+                        onChange={handleChange}
+                    />
+
+                    {/* To'lov usuli */}
+                    <CustomDropdown
+                        label="To'lov usuli"
+                        name="payment_method"
+                        value={formData.payment_method}
+                        options={paymentMethodOptions}
+                        onChange={handleChange}
+                    />
+
+                    {/* To'lov sharti */}
+                    <CustomDropdown
+                        label="To'lov sharti"
+                        name="payment_condition"
+                        value={formData.payment_condition}
+                        options={paymentConditionOptions}
+                        onChange={handleChange}
+                    />
+
+                    {/* To'lov muddati */}
                     <div className="space-y-1.5">
-                        <label className="text-sm font-semibold text-slate-700 ml-1">Yukning xavflilik darajasi</label>
-                        <select
-                            name="danger"
-                            value={formData.danger}
+                        <label className="text-sm font-semibold text-slate-700 ml-1">To'lov muddati (kun) *</label>
+                        <input
+                            name="payment_period"
+                            type="number"
+                            value={formData.payment_period}
                             onChange={handleChange}
+                            required
                             className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none"
-                        >
-                            <option value="1">Xavfli yuk</option>
-                            <option value="2">Oddiy yuk</option>
-                        </select>
+                            placeholder="0"
+                        />
                     </div>
 
-                    {/* Vehicle Type */}
-                    <div className="space-y-1.5">
-                        <label className="text-sm font-semibold text-slate-700 ml-1">Transport turi</label>
-                        <select
-                            name="vehicle_category"
-                            value={formData.vehicle_category}
-                            onChange={handleChange}
-                            className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none"
-                        >
-                            <option value="van">Van</option>
-                            <option value="semitruck">Yarim tirkama</option>
-                            <option value="truck">Yuk mashinasi</option>
-                            <option value="trailer">Tirkama</option>
-                        </select>
-                    </div>
-
-                    {/* Body Type */}
-                    <div className="space-y-1.5">
-                        <label className="text-sm font-semibold text-slate-700 ml-1">Kuzov turi</label>
-                        <select
-                            name="body_type"
-                            value={formData.body_type}
-                            onChange={handleChange}
-                            className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none"
-                        >
-                            <option value="open">Ochiq</option>
-                            <option value="closed">Yopiq</option>
-                        </select>
-                    </div>
-
-                    {/* Shipping Mode */}
-                    <div className="space-y-1.5">
-                        <label className="text-sm font-semibold text-slate-700 ml-1">Yetkazib berish rejimi</label>
-                        <select
-                            name="shipping_mode"
-                            value={formData.shipping_mode}
-                            onChange={handleChange}
-                            className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none"
-                        >
-                            <option value="FTL">To'liq yuk (FTL)</option>
-                            <option value="LTL">Qismiy yuk (LTL)</option>
-                        </select>
-                    </div>
-
-                    {/* Payment Method */}
-                    <div className="space-y-1.5">
-                        <label className="text-sm font-semibold text-slate-700 ml-1">To'lov usuli</label>
-                        <select
-                            name="payment_method"
-                            value={formData.payment_method}
-                            onChange={handleChange}
-                            className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none"
-                        >
-                            <option value="cash">Naqd pul</option>
-                            <option value="bank_transfer">Bank o'tkazmasi</option>
-                            <option value="card">Karta</option>
-                        </select>
-                    </div>
-
-                    {/* Payment Condition */}
-                    <div className="space-y-1.5">
-                        <label className="text-sm font-semibold text-slate-700 ml-1">To'lov sharti</label>
-                        <select
-                            name="payment_condition"
-                            value={formData.payment_condition}
-                            onChange={handleChange}
-                            className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none"
-                        >
-                            <option value="copied_documents">Nusxa hujjatlar</option>
-                            <option value="original_document">Asl hujjatlar</option>
-                            <option value="on_delivery">Yetkazib berishda</option>
-                        </select>
-                    </div>
-
-                    {/* Description */}
+                    {/* Qo'shimcha ma'lumot */}
                     <div className="space-y-1.5 md:col-span-2">
                         <label className="text-sm font-semibold text-slate-700 ml-1">Yuk haqida qo'shimcha ma'lumot</label>
                         <textarea
@@ -864,7 +930,7 @@ const AddCargo = ({ onNavigate }) => {
                     </div>
                 </div>
 
-                {/* MAP SECTION */}
+                {/* XARITA BO'LIMI */}
                 <div className="space-y-4 mt-6">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
@@ -903,7 +969,7 @@ const AddCargo = ({ onNavigate }) => {
                         </div>
                     )}
 
-                    {/* Marker Type Selector */}
+                    {/* Marker turi tanlovi */}
                     <div className="bg-slate-50 rounded-xl p-4">
                         <div className="flex flex-wrap gap-4 mb-4">
                             <div className="flex items-center gap-2">
@@ -933,12 +999,12 @@ const AddCargo = ({ onNavigate }) => {
                                 {activeMarker === 'start' ? (
                                     <div className="flex items-center gap-1">
                                         <div className="w-3 h-3 rounded-full bg-blue-600"></div>
-                                        <span>Blue marker - yuklash joyi</span>
+                                        <span>Ko'k marker - yuklash joyi</span>
                                     </div>
                                 ) : (
                                     <div className="flex items-center gap-1">
                                         <div className="w-3 h-3 rounded-full bg-red-600"></div>
-                                        <span>Red marker - yetkazib berish joyi</span>
+                                        <span>Qizil marker - yetkazib berish joyi</span>
                                     </div>
                                 )}
                             </div>
@@ -949,10 +1015,10 @@ const AddCargo = ({ onNavigate }) => {
                                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
                                     <div>
                                         <h2 className="text-xl font-bold">
-                                            {showSatellite ? 'Satellite View' : 'Detailed Street Map'}
+                                            {showSatellite ? "Sun'iy yo'ldosh ko\'rinishi" : 'Batafsil ko\'cha xaritasi'}
                                         </h2>
                                         <p className="text-blue-200 text-sm mt-1">
-                                            Click on map to set {activeMarker === 'start' ? 'loading' : 'delivery'} location
+                                            {activeMarker === 'start' ? 'Yuklash' : 'Yetkazib berish'} manzilini belgilash uchun xaritaga bosing
                                         </p>
                                     </div>
                                     <div className="mt-2 sm:mt-0 flex items-center space-x-2">
@@ -961,10 +1027,10 @@ const AddCargo = ({ onNavigate }) => {
                                             onClick={toggleMapStyle}
                                             className="px-3 py-1 bg-white text-blue-500 rounded-full text-sm font-medium hover:bg-blue-50"
                                         >
-                                            {showSatellite ? 'Street View' : 'Satellite View'}
+                                            {showSatellite ? 'Ko\'cha ko\'rinishi' : "Sun'iy yo'ldosh"}
                                         </button>
                                         <div className={`px-3 py-1 rounded-full text-sm font-medium ${zoomLevel >= 12 ? 'bg-green-500' : 'bg-gray-600'}`}>
-                                            Labels: {zoomLevel >= 12 ? 'ON' : 'OFF'}
+                                            Yozuvlar: {zoomLevel >= 12 ? 'YOQIQ' : "O'CHIQ"}
                                         </div>
                                         <div className="px-3 py-1 bg-blue-500 rounded-full text-sm font-medium">
                                             Zoom: {zoomLevel.toFixed(1)}x
@@ -979,7 +1045,7 @@ const AddCargo = ({ onNavigate }) => {
                                     className="w-full h-96 md:h-[500px]"
                                 />
                                 
-                                {/* Map Controls */}
+                                {/* Xarita boshqaruv tugmalari */}
                                 <div className="absolute top-4 left-4 flex flex-col gap-2">
                                     <button 
                                         onClick={() => map.current?.zoomIn()}
@@ -997,7 +1063,7 @@ const AddCargo = ({ onNavigate }) => {
                                     </button>
                                 </div>
                                 
-                                {/* Coordinate Limit Notice */}
+                                {/* Koordinata limiti xabari */}
                                 <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-lg p-3 shadow-lg max-w-xs">
                                     <p className="text-xs font-medium text-slate-700 mb-1">Koordinata limiti:</p>
                                     <p className="text-xs text-slate-600">Maksimum 9 raqam</p>
@@ -1013,7 +1079,7 @@ const AddCargo = ({ onNavigate }) => {
                                     </div>
                                 </div>
                                 
-                                {/* Location Status */}
+                                {/* Joylashuv holati */}
                                 {(formData.route_starts_where_lat || formData.route_ends_where_lat) && (
                                     <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm rounded-lg p-3 shadow-lg max-w-xs">
                                         <div className="space-y-2">
@@ -1112,7 +1178,7 @@ const AddCargo = ({ onNavigate }) => {
                     </div>
                 </div>
 
-                {/* Photo upload section */}
+                {/* Rasm yuklash bo'limi */}
                 <div className="relative border-2 border-dashed border-slate-200 rounded-3xl p-6 text-center bg-slate-50/50 hover:bg-slate-50 transition-colors cursor-pointer group">
                     <input
                         type="file"
@@ -1122,7 +1188,7 @@ const AddCargo = ({ onNavigate }) => {
                     />
                     <FaCloudUploadAlt size={32} className="mx-auto text-blue-500 mb-2 group-hover:scale-110 transition-transform" />
                     <p className="text-slate-600 font-medium text-sm sm:text-base">Yuk rasmini tanlang</p>
-                    <p className="text-slate-400 text-xs mt-1">PNG, JPG formatlar (Max 5MB)</p>
+                    <p className="text-slate-400 text-xs mt-1">PNG, JPG formatlar (Maks. 5MB)</p>
                 </div>
 
                 <button
